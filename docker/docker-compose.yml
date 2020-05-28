@@ -1,0 +1,41 @@
+version: '3.4'
+
+x-common-service: &common-service
+  environment:
+    ENV: development
+    ANALYTICS_MONGO_URL: "mongodb://mongo:27017"
+    ANALYTICS_BROKER_REDIS_URL: "redis://analytics_redis:6379/0"
+    CELERY_BROKER_REDIS_URL: "redis://celery_redis:6379/0"
+  depends_on:
+    - mongo
+    - analytics_redis
+    - celery_redis
+
+x-common-build: &common-build
+  args:
+    API_PORT: 5000
+    SERVICE_DIR: immuni_analytics
+  context: ../
+  dockerfile: ./common/Dockerfile
+
+services:
+  beat:
+    <<: *common-service
+    image: beat
+    build:
+      <<: *common-build
+      target: beat
+  worker:
+    <<: *common-service
+    image: worker
+    build:
+      <<: *common-build
+      target: worker
+  mongo:
+    image: mongo:4.0.18-xenial
+    ports:
+      - "27017:27017"
+  analytics_redis:
+    image: redis:5.0.9-alpine
+  celery_redis:
+    image: redis:5.0.9-alpine
