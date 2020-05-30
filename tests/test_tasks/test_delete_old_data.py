@@ -20,7 +20,6 @@ from freezegun import freeze_time
 from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
 from immuni_analytics.tasks.delete_old_data import delete_old_data
-from immuni_common.celery import CeleryApp
 
 
 @patch("immuni_analytics.tasks.delete_old_data._LOGGER.info")
