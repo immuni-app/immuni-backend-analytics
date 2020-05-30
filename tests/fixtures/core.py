@@ -13,7 +13,6 @@
 
 from typing import AsyncGenerator
 
-from celery import Celery
 from mongoengine import get_db
 from pytest import fixture
 from pytest_sanic.utils import TestClient
