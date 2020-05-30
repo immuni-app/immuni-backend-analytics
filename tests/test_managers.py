@@ -30,3 +30,8 @@ def test_analytics_redis_failure() -> None:
         mock.return_value = None
         with raises(RuntimeError):
             managers.analytics_redis
+
+
+async def test_teardown_on_uninitialized() -> None:
+    uninitialized_managers = Managers()
+    await uninitialized_managers.teardown()
