@@ -166,12 +166,15 @@ jobs:
           name: "[docker] Run the example"
           command: cd docker && docker-compose up --detach
       - run:
-          name: "[docker] Celery worker check"
+          name: "[misc] Let the Celery app start"
+          command: sleep 3
+      - run:
+          name: "[celery] Worker health check"
           command: |
             docker exec docker_worker_1 \
                 celery inspect stats --app=immuni_analytics.celery.celery_app
       - run:
-          name: "[docker] Celery beat check"
+          name: "[celery] Beat health check"
           command: |
             docker exec docker_beat_1 \
                 ps -e | grep celery
