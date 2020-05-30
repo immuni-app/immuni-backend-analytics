@@ -166,16 +166,15 @@ jobs:
           name: "[docker] Run the example"
           command: cd docker && docker-compose up --detach
       - run:
-          name: "[docker] Health check"
+          name: "[docker] Celery worker check"
           command: |
-            docker run \
-                --network container:docker_api_1 \
-                appropriate/curl \
-                --verbose \
-                --retry 10 \
-                --retry-delay 1 \
-                --retry-connrefused \
-                http://localhost:5000
+            docker exec docker_worker_1 \
+                celery inspect stats --app=immuni_analytics.celery.celery_app
+      - run:
+          name: "[docker] Celery beat check"
+          command: |
+            docker exec docker_beat_1 \
+                ps -e | grep celery
 
 workflows:
   code-quality:
