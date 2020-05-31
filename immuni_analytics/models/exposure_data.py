@@ -60,7 +60,7 @@ class ExposureDetectionSummary(EmbeddedDocument):
     days_since_last_exposure = IntField(required=True)
     attenuation_durations = ListField(IntField(), required=True)
     maximum_risk_score = IntField(required=True)
-    exposure_info = EmbeddedDocumentListField(ExposureInfo, required=True)
+    exposure_info = EmbeddedDocumentListField(ExposureInfo, required=False, default=[])
 
 
 class ExposurePayload(Document):
