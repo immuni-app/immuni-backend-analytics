@@ -83,9 +83,10 @@ class ExposurePayload(Document):
         :param payload: the dictionary to convert
         :return: the corresponding ExposurePayload
         """
-        if not (province := payload.get("province")) or (
-            exposure_detection_summaries := payload.get("exposure_detection_summaries")
-        ) is None:
+        if (
+            not (province := payload.get("province"))
+            or (exposure_detection_summaries := payload.get("exposure_detection_summaries")) is None
+        ):
             raise ValidationError()
 
         return ExposurePayload(
