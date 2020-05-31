@@ -70,7 +70,7 @@ class ExposurePayload(Document):
 
     province = StringField(required=True)
     exposure_detection_summaries = EmbeddedDocumentListField(
-        ExposureDetectionSummary, required=True
+        ExposureDetectionSummary, required=False, default=[]
     )
 
     meta = {"indexes": ["province"]}
@@ -83,9 +83,9 @@ class ExposurePayload(Document):
         :param payload: the dictionary to convert
         :return: the corresponding ExposurePayload
         """
-        if not (province := payload.get("province")) or not (
+        if not (province := payload.get("province")) or (
             exposure_detection_summaries := payload.get("exposure_detection_summaries")
-        ):
+        ) is None:
             raise ValidationError()
 
         return ExposurePayload(
