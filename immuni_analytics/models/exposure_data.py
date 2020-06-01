@@ -69,6 +69,7 @@ class ExposurePayload(Document):
     """
 
     province = StringField(required=True)
+    symptoms_started_on = DateField(required=False)
     exposure_detection_summaries = EmbeddedDocumentListField(
         ExposureDetectionSummary, required=False, default=[]
     )
@@ -89,9 +90,12 @@ class ExposurePayload(Document):
         ):
             raise ValidationError()
 
+        symptoms_started_on = payload.get("symptoms_started_on", None)
+
         return ExposurePayload(
             **{
                 "province": province,
+                "symptoms_started_on": symptoms_started_on,
                 "exposure_detection_summaries": [
                     asdict(ExposureDetectionSummarySchema().load(e))
                     for e in exposure_detection_summaries

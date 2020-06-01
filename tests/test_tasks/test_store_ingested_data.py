@@ -254,3 +254,79 @@ async def test_empty_exposure_info(
             any_order=False,
         )
         logger_warning.assert_not_called()
+
+
+@patch("immuni_analytics.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.tasks.store_ingested_data._LOGGER.info")
+async def test_missing_symptoms_started_on(
+    logger_info: MagicMock,
+    logger_warning: MagicMock,
+    generate_redis_data: Callable[..., List[Dict[str, Any]]],
+) -> None:
+    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 1):
+        redis_data = generate_redis_data(length=1)
+        del redis_data[0]["payload"]["symptoms_started_on"]
+
+        await managers.analytics_redis.rpush(
+            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+        )
+
+        assert ExposurePayload.objects.count() == 0
+
+        await _store_ingested_data()
+
+        assert ExposurePayload.objects.count() == 1
+
+        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 0
+        assert logger_info.call_count == 2
+        logger_info.assert_has_calls(
+            [
+                call("Data ingestion started."),
+                call(
+                    "Data ingestion completed.",
+                    extra={"ingested_data": 1, "ingestion_queue_length": 0},
+                ),
+            ],
+            any_order=False,
+        )
+        logger_warning.assert_not_called()
+
+
+@mark.parametrize("value", ["asd", [], {}, "2020-123-01", "2020-01-123"])
+@patch("immuni_analytics.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.tasks.store_ingested_data._LOGGER.info")
+async def test_wrong_symptoms_started_on(
+    logger_info: MagicMock,
+    logger_warning: MagicMock,
+    value: Any,
+    generate_redis_data: Callable[..., List[Dict[str, Any]]],
+) -> None:
+    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 5):
+        redis_data = generate_redis_data(length=1)
+        redis_data[0]["payload"]["symptoms_started_on"] = value
+
+        await managers.analytics_redis.rpush(
+            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+        )
+
+        assert ExposurePayload.objects.count() == 0
+
+        await _store_ingested_data()
+
+        assert ExposurePayload.objects.count() == 0
+        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 1
+
+        assert logger_info.call_count == 2
+        logger_info.assert_has_calls(
+            [
+                call("Data ingestion started."),
+                call(
+                    "Data ingestion completed.",
+                    extra={"ingested_data": 0, "ingestion_queue_length": 0},
+                ),
+            ],
+            any_order=False,
+        )
+        logger_warning.assert_called_once_with(
+            "Found ingested data with bad format", extra={"bad_format_data": 1}
+        )
