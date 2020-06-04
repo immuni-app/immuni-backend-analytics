@@ -16,11 +16,11 @@ import asyncio
 from immuni_analytics.celery import celery_app
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.device_check import fetch_device_check_bits, set_device_check_bits
+from immuni_analytics.helpers.redis import (
+    get_authorized_tokens_redis_key_current_month,
+    get_authorized_tokens_redis_key_next_month,
+)
 from immuni_common.core.exceptions import ImmuniException
-
-from immuni_analytics.helpers.redis import \
-    get_authorized_tokens_redis_key_current_month, \
-    get_authorized_tokens_redis_key_next_month
 
 
 class DiscardAnalyticsTokenException(ImmuniException):
@@ -90,7 +90,7 @@ async def _third_step(device_token: str) -> None:
     await set_device_check_bits(device_token, bit0=False, bit1=False)
 
 
-async def _blacklist_device(device_token) -> None:
+async def _blacklist_device(device_token: str) -> None:
     """
     Set the both DeviceCheck bits to True, a configuration that marks blacklisted devices.
 

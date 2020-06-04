@@ -14,10 +14,29 @@
 from immuni_analytics.helpers.date_utils import current_month, next_month
 
 
-def get_authorized_tokens_redis_key_current_month(with_exposure: bool):
-    return f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:{current_month().isoformat()}"
+def get_authorized_tokens_redis_key_current_month(with_exposure: bool) -> str:
+    """
+    Returns the redis key associated with the authorized analytics tokens for the current month.
+
+    :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
+    with exposure or not
+    :return: the redis key
+    """
+    return (
+        f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:"
+        f"{current_month().isoformat()}"
+    )
 
 
-def get_authorized_tokens_redis_key_next_month(with_exposure: bool):
-    return f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:{next_month().isoformat()}"
+def get_authorized_tokens_redis_key_next_month(with_exposure: bool) -> str:
+    """
+    Returns the redis key associated with the authorized analytics tokens for the next month.
 
+    :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
+    with exposure or not
+    :return: the redis key
+    """
+    return (
+        f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:"
+        f"{next_month().isoformat()}"
+    )

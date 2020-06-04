@@ -17,9 +17,8 @@ from immuni_common.models.enums import Platform
 
 
 class OperationalInfo:
-
     """
-    Doc model for the Upload. This is simply a way to describe the Upload
+    Doc model for the operational info upload request body.
     """
 
     platform = doc.String(
@@ -49,6 +48,10 @@ class OperationalInfo:
 
 
 class AuthorizationBody:
+    """
+    Doc model for the token authorization request body.
+    """
+
     platform = doc.String(
         "The device’s operating system (either iOS or Android)",
         choices=[p.value for p in Platform],

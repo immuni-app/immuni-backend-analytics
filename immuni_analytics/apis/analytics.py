@@ -26,6 +26,7 @@ from immuni_analytics.helpers.redis import get_authorized_tokens_redis_key_curre
 from immuni_analytics.models.operational_info import OperationalInfo as OperationalInfoDocument
 from immuni_analytics.models.swagger import AuthorizationBody, OperationalInfo
 from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
+from immuni_analytics.tasks.store_operational_info import store_operational_info
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import json_response, validate
 from immuni_common.helpers.swagger import doc_exception
@@ -38,8 +39,6 @@ from immuni_common.models.marshmallow.fields import (
     Province,
 )
 from immuni_common.models.swagger import HeaderImmuniContentTypeJson
-
-from immuni_analytics.tasks.store_operational_info import store_operational_info
 
 bp = Blueprint("operational-info", url_prefix="/analytics")
 
@@ -97,15 +96,17 @@ async def post_operational_info(
     if await managers.analytics_redis.srem(
         get_authorized_tokens_redis_key_current_month(exposure_notification), request.token
     ):
-        store_operational_info.delay(OperationalInfoDocument(
-            platform=platform,
-            province=province,
-            exposure_permission=exposure_permission,
-            bluetooth_active=bluetooth_active,
-            notification_permission=notification_permission,
-            exposure_notification=exposure_notification,
-            last_risky_exposure=last_risky_exposure,
-        ).to_mongo())
+        store_operational_info.delay(
+            OperationalInfoDocument(
+                platform=platform,
+                province=province,
+                exposure_permission=exposure_permission,
+                bluetooth_active=bluetooth_active,
+                notification_permission=notification_permission,
+                exposure_notification=exposure_notification,
+                last_risky_exposure=last_risky_exposure,
+            ).to_mongo()
+        )
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
