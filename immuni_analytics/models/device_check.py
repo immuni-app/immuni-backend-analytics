@@ -15,12 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
-
-def current_month() -> date:
-    """
-    Returns a datetime object representing the first day of the current month
-    """
-    return date.today().replace(day=1)
+from immuni_analytics.helpers.date_utils import current_month
 
 
 @dataclass(frozen=True)
@@ -32,3 +27,36 @@ class DeviceCheckData:
     bit0: bool
     bit1: bool
     last_update_time: Optional[str]  # YYYY-MM formatted
+
+    @property
+    def last_update_month(self) -> date:
+        return date.fromisoformat(f"{self.last_update_time}-01")
+
+    @property
+    def is_default_configuration_compliant(self) -> bool:
+        """
+        Checks if the data represent an expected configuration for the first and second read.
+        The correct configurations are:
+        - The last_update_time is not defined
+        - The last_update_time is at least one month ago and both bits are false
+
+        :return: true if the configuration is correct, false otherwise.
+        """
+        if self.last_update_time is None or (
+            current_month() > self.last_update_month and self.bit0 is False and self.bit1 is False
+        ):
+            return True
+        return False
+
+    @property
+    def is_authorized_configuration_compliant(self) -> bool:
+        """
+        Checks if the data represent an expected configuration for the third read.
+        The correct configuration is bit0 = True and bit1 = False
+
+        :return: true if the configuration is correct, false otherwise.
+        """
+        if self.bit0 is True and self.bit1 is False:
+            return True
+
+        return False

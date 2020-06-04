@@ -10,3 +10,19 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+from datetime import date, timedelta
+
+
+def current_month() -> date:
+    """
+    Returns a date object representing the first day of the current month
+    """
+    return date.today().replace(day=1)
+
+
+def next_month() -> date:
+    """
+    Returns a date object representing the first day of the next month
+    """
+    return (current_month() + timedelta(days=31)).replace(day=1)
