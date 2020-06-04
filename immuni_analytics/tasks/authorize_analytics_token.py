@@ -15,21 +15,16 @@ import asyncio
 
 from immuni_analytics.celery import celery_app
 from immuni_analytics.core.managers import managers
-from immuni_analytics.helpers.date_utils import current_month, next_month
 from immuni_analytics.helpers.device_check import fetch_device_check_bits, set_device_check_bits
 from immuni_common.core.exceptions import ImmuniException
+
+from immuni_analytics.helpers.redis import \
+    get_authorized_tokens_redis_key_current_month, \
+    get_authorized_tokens_redis_key_next_month
 
 
 class DiscardAnalyticsTokenException(ImmuniException):
     """Raised when the device cannot authorize an analytics token."""
-
-
-def _get_authorized_tokens_redis_key_current_month(with_exposure: bool):
-    return f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:{current_month().isoformat()}"
-
-
-def _get_authorized_tokens_redis_key_next_month(with_exposure: bool):
-    return f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:{next_month().isoformat()}"
 
 
 @celery_app.task()
@@ -42,6 +37,7 @@ def authorize_analytics_token(analytics_token: str, device_token: str) -> None: 
 
 async def _authorize_analytics_token(analytics_token: str, device_token: str) -> None:
     try:
+        # TODO wait time between one step and the next one
         await _first_step(device_token)
         await _second_step(device_token)
         await _third_step(device_token)
@@ -110,15 +106,15 @@ async def _add_analytics_token_to_redis(analytics_token: str) -> None:
     """
     pipe = managers.analytics_redis.pipeline()
     pipe.analytics_redis.sadd(
-        _get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token
+        get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token
     )
     pipe.analytics_redis.sadd(
-        _get_authorized_tokens_redis_key_current_month(with_exposure=False), analytics_token
+        get_authorized_tokens_redis_key_current_month(with_exposure=False), analytics_token
     )
     pipe.analytics_redis.sadd(
-        _get_authorized_tokens_redis_key_next_month(with_exposure=True), analytics_token
+        get_authorized_tokens_redis_key_next_month(with_exposure=True), analytics_token
     )
     pipe.analytics_redis.sadd(
-        _get_authorized_tokens_redis_key_next_month(with_exposure=False), analytics_token
+        get_authorized_tokens_redis_key_next_month(with_exposure=False), analytics_token
     )
     await pipe.execute()
