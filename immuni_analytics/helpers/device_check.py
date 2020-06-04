@@ -1,0 +1,137 @@
+#   Copyright (C) 2020 Presidenza del Consiglio dei Ministri.
+#   Please refer to the AUTHORS file for more information.
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as
+#   published by the Free Software Foundation, either version 3 of the
+#   License, or (at your option) any later version.
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU Affero General Public License for more details.
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+import logging
+import uuid
+from datetime import datetime
+from json import JSONDecodeError
+from typing import Any, Dict
+
+import jwt
+from aiohttp import ClientError, ClientSession
+
+from immuni_analytics.core import config
+from immuni_analytics.helpers.request import (
+    BadFormatRequestError,
+    ServerUnavailableError,
+    post_with_retry,
+)
+from immuni_analytics.models.device_check import DeviceCheckData
+
+_LOGGER = logging.getLogger(__name__)
+
+_DEVICE_CHEK_URL = "https://api.development.devicecheck.apple.com/v1"
+_DEVICE_CHECK_GET_BITS_URL = f"{_DEVICE_CHEK_URL}/query_two_bits"
+_DEVICE_CHECK_SET_BITS_URL = f"{_DEVICE_CHEK_URL}/update_two_bits"
+
+
+class DeviceCheckApiError(Exception):
+    pass
+
+
+def _generate_device_check_jwt() -> str:
+    """
+    Create an authorization token to query the DeviceCheck API.
+
+    :return: a jwt token as string
+    """
+    return jwt.encode(
+        payload={"iss": config.APPLE_TEAM_ID, "iat": int(datetime.utcnow().timestamp())},
+        key=config.APPLE_CERTIFICATE_KEY,
+        algorithm="ES256",
+        headers={"kid": config.APPLE_KEY_ID},
+    ).decode("utf-8")
+
+
+def _generate_headers() -> Dict[str, str]:
+    """
+    Create the headers to be sent to the DeviceCheck API
+
+    :return: a dictionary containing the Authorization header
+    """
+    return {"Authorization": f"Bearer {_generate_device_check_jwt()}"}
+
+
+def _generate_common_payload() -> Dict[str, Any]:
+    """
+    Create the common part of the payload to be sent to the DeviceCheckApi
+
+    :return: a dictionary containing the transaction id and the current timestamp in milliseconds
+    """
+    return {
+        "transaction_id": str(uuid.uuid4()),
+        # timestamp in millisecond
+        "timestamp": int(datetime.utcnow().timestamp() * 1000),
+    }
+
+
+async def fetch_device_check_bits(token: str) -> DeviceCheckData:
+    """
+    Fetch the two bits from the DeviceCheck API
+
+    :param token: the base64 encoded device token
+    """
+
+    payload = {
+        **_generate_common_payload(),
+        "device_token": token,
+    }
+
+    async with ClientSession() as session:
+        try:
+            response = await post_with_retry(
+                session, url=_DEVICE_CHECK_GET_BITS_URL, json=payload, headers=_generate_headers()
+            )
+        except BadFormatRequestError:
+            _LOGGER.warning(
+                "The DeviceCheck API returned a 400 error", extra={"device_token": token}
+            )
+            raise DeviceCheckApiError()
+        except (ClientError, TimeoutError, ServerUnavailableError) as exc:
+            raise DeviceCheckApiError from exc
+
+        # if the bits have never been set the api returns 200 with a specific string and the
+        # json method fails
+        try:
+            return DeviceCheckData(**(await response.json()))
+        except JSONDecodeError:
+            return DeviceCheckData(bit0=False, bit1=False, last_update_time=None)
+
+
+async def set_device_check_bits(token: str, *, bit0: bool, bit1: bool) -> None:
+    """
+    Set the two DeviceCheck bits for the given device.
+
+    :param token: the base64 encoded device token
+    :param bit0: the first DeviceCheck bit to set
+    :param bit1: the second DeviceCheck bit to set
+    """
+    payload = {
+        **_generate_common_payload(),
+        "device_token": token,
+        "bit0": bit0,
+        "bit1": bit1,
+    }
+
+    async with ClientSession() as session:
+        try:
+            await post_with_retry(
+                session, url=_DEVICE_CHECK_SET_BITS_URL, json=payload, headers=_generate_headers()
+            )
+        except BadFormatRequestError:
+            _LOGGER.warning(
+                "The DeviceCheck API returned a 400 error", extra={"device_token": token}
+            )
+            raise DeviceCheckApiError()
+        except (ClientError, TimeoutError, ServerUnavailableError) as exc:
+            raise DeviceCheckApiError from exc

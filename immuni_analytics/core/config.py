@@ -16,7 +16,7 @@ import logging
 from decouple import config
 
 from immuni_common.core.config import ENV
-from immuni_common.helpers.config import validate_crontab
+from immuni_common.helpers.config import validate_crontab, load_certificate
 from immuni_common.models.enums import Environment
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,6 +38,12 @@ CELERY_BROKER_REDIS_URL: str = config("CELERY_BROKER_REDIS_URL", default="redis:
 CELERY_ALWAYS_EAGER: bool = config(
     "CELERY_ALWAYS_EAGER", cast=bool, default=ENV == Environment.TESTING
 )
+
+APPLE_CERTIFICATE_KEY = config(
+    "APPLE_CERTIFICATE_KEY", cast=load_certificate("APPLE_CERTIFICATE_KEY"), default=""
+)
+APPLE_KEY_ID = config("APPLE_KEY_ID", default="")
+APPLE_TEAM_ID = config("APPLE_TEAM_ID", default="")
 
 DATA_RETENTION_DAYS: int = config("DATA_RETENTION_DAYS", cast=int, default=30)
 MAX_INGESTED_ELEMENTS: int = config("MAX_INGESTED_ELEMENTS", cast=int, default=100)
