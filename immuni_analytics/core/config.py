@@ -16,7 +16,7 @@ import logging
 from decouple import config
 
 from immuni_common.core.config import ENV
-from immuni_common.helpers.config import validate_crontab, load_certificate
+from immuni_common.helpers.config import load_certificate, validate_crontab
 from immuni_common.models.enums import Environment
 
 _LOGGER = logging.getLogger(__name__)
