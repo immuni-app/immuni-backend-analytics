@@ -36,7 +36,7 @@ _DEVICE_CHECK_SET_BITS_URL = f"{_DEVICE_CHEK_URL}/update_two_bits"
 
 
 class DeviceCheckApiError(Exception):
-    pass
+    """Raised when an error occurs while calling the DeviceCheck API"""
 
 
 def _generate_device_check_jwt() -> str:

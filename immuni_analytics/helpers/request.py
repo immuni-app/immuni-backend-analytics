@@ -42,7 +42,9 @@ def after_log() -> Callable[[RetryCallState], None]:
         exc = retry_state.outcome.exception()
         url = retry_state.kwargs.get("url")
         logger.warning(
-            f"HTTP request to url {url} failed (attempt {retry_state.attempt_number}): {exc}",
+            "HTTP request to url %s failed (attempt %d)",
+            url,
+            retry_state.attempt_number,
             extra=dict(request_args=retry_state, request_kwargs=retry_state.kwargs),
         )
 

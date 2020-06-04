@@ -11,7 +11,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from mongoengine import BooleanField, Document, StringField, DateTimeField
+from mongoengine import BooleanField, DateTimeField, Document, StringField
 
 from immuni_common.models.enums import Platform
 from immuni_common.models.mongoengine.enum_field import EnumField

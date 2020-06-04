@@ -11,7 +11,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 from immuni_analytics.celery import celery_app
 from immuni_analytics.models.operational_info import OperationalInfo
