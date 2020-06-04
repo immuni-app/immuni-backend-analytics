@@ -11,6 +11,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+from immuni_analytics.apis import analytics
 from immuni_analytics.core.managers import managers
 from immuni_common.sanic import create_app, run_app
 
@@ -23,7 +24,7 @@ sanic_app = create_app(
     " anomalies in the system, as well as being able to check how many users are"
     " being notified. The National Healthcare System needs this information to"
     " operate Immuni effectively.",
-    blueprints=(),
+    blueprints=(analytics.bp,),
     managers=managers,
 )
 
