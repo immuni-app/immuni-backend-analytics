@@ -48,12 +48,14 @@ class Managers(BaseManagers):
             raise RuntimeError("Attempting to use Analytics redis before initialization")
         return self._analytics_redis
 
-    async def initialize(self) -> None:
+    async def initialize(self, initialize_mongo: bool = False) -> None:
         """
         Initialize managers on demand.
         """
         await super().initialize()
-        self._analytics_mongo = connect(host=config.ANALYTICS_MONGO_URL)
+        if initialize_mongo:
+            self._analytics_mongo = connect(host=config.ANALYTICS_MONGO_URL)
+
         self._analytics_redis = await aioredis.create_redis_pool(
             address=config.ANALYTICS_BROKER_REDIS_URL, encoding="utf-8",
         )
