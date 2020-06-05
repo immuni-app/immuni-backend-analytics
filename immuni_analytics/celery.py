@@ -12,6 +12,7 @@
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+from enum import Enum
 from typing import Any, List, Tuple
 
 from celery.schedules import crontab
@@ -22,6 +23,17 @@ from immuni_analytics import tasks
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_common.celery import CeleryApp, Schedule
+
+from immuni_analytics.tasks.route import route
+import logging
+
+
+class AnalyticsQueue(Enum):
+    WITHOUT_MONGO = "without_mongo"
+    WITH_MONGO = "with_mongo"
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _get_schedules() -> Tuple[Schedule, ...]:
@@ -61,8 +73,18 @@ def worker_process_init_listener(**kwargs: Any) -> None:
     Listener on worker initialization to properly initialize the project's managers.
 
     :param kwargs: the keyword arguments passed by Celery, ignored in this case.
+    :raises: ImmuniException
     """
-    asyncio.run(managers.initialize())
+    # The celery inspect needs some time to initialize correctly
+    # sleep(3)
+    # active_queues_lists = celery_app.control.inspect().active_queues()
+    # worker_queues = [
+    #     queue_info["name"] for active_queue_list in active_queues_lists.values() for queue_info in active_queue_list
+    # ]
+    # if len(worker_queues) != 1:
+    #     raise ImmuniException("More than one queue specified for celery worker. ")
+
+    asyncio.run(managers.initialize(initialize_mongo=True))
 
 
 @worker_process_shutdown.connect
@@ -80,5 +102,6 @@ celery_app = CeleryApp(
     broker_redis_url=config.CELERY_BROKER_REDIS_URL,
     always_eager=config.CELERY_ALWAYS_EAGER,
     schedules_function=_get_schedules,
+    routes_function=route,
     tasks_module=tasks,
 )
