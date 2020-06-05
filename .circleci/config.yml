@@ -39,26 +39,26 @@ commands:
         type: string
         default: "v1"
 
-      poetry_sha:
-        description: The sha associated with a specific poetry release.
+      poetry_version:
+        description: The version of Poetry to be installed.
         type: string
-        default: 754dbf80dc022b89974288cff10b40ab2f1c2697
+        default: 1.0.5
 
     steps:
       - run:
           name: "[python] Setup Poetry environment"
-          command: echo 'export POETRY_HOME=./.poetry; export PATH=$POETRY_HOME/bin:$PATH' >> $BASH_ENV
+          command: echo 'export POETRY_VERSION=1.0.5; export POETRY_HOME=./.poetry; export PATH=$POETRY_HOME/bin:$PATH' >> $BASH_ENV
       - restore_cache:
           name: "[python] Restore the Poetry cache"
           keys:
-            - poetry-<< parameters.poetry_sha >>
+            - poetry-<< parameters.poetry_version >>
       - run:
           name: "[python] Install Poetry"
           working_directory: .
           command: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/<< parameters.poetry_sha >>/get-poetry.py | python
       - save_cache:
           name: "[python] Save the Poetry cache"
-          key: poetry-<< parameters.poetry_sha >>
+          key: poetry-<< parameters.poetry_version >>
           paths:
             - ./.poetry
       - restore_cache:
@@ -169,9 +169,14 @@ jobs:
           name: "[misc] Let the Celery app start"
           command: sleep 3
       - run:
-          name: "[celery] Worker health check"
+          name: "[celery] Worker mongo health check"
           command: |
-            docker exec docker_worker_1 \
+            docker exec docker_worker_mongo_1 \
+                celery inspect stats --app=immuni_analytics.celery.celery_app
+      - run:
+          name: "[celery] Worker redis health check"
+          command: |
+            docker exec docker_worker_redis_1 \
                 celery inspect stats --app=immuni_analytics.celery.celery_app
       - run:
           name: "[celery] Beat health check"
