@@ -30,6 +30,9 @@ class DeviceCheckData:
 
     @property
     def last_update_month(self) -> date:
+        """
+        Returns the date object of the last update
+        """
         return date.fromisoformat(f"{self.last_update_time}-01")
 
     @property

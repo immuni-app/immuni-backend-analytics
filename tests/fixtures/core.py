@@ -32,7 +32,7 @@ async def cleanup(sanic: Sanic) -> None:
 async def sanic(monitoring_setup: None) -> Sanic:
     from immuni_analytics.sanic import sanic_app
 
-    await managers.initialize()
+    await managers.initialize(initialize_mongo=True)
     yield sanic_app
     await managers.teardown()
 

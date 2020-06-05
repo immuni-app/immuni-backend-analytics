@@ -12,7 +12,7 @@
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-from enum import Enum
+import logging
 from typing import Any, List, Tuple
 
 from celery.schedules import crontab
@@ -22,20 +22,14 @@ from croniter import croniter
 from immuni_analytics import tasks
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
+from immuni_analytics.models.enums import AnalyticsQueue
 from immuni_common.celery import CeleryApp, Schedule
-
-from immuni_analytics.tasks.route import route
-import logging
-
-
-class AnalyticsQueue(Enum):
-    WITHOUT_MONGO = "without_mongo"
-    WITH_MONGO = "with_mongo"
-
 
 _LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=import-outside-toplevel
+# pylint: disable=cyclic-import
 def _get_schedules() -> Tuple[Schedule, ...]:
     """
     Get static scheduling of tasks.
@@ -43,12 +37,7 @@ def _get_schedules() -> Tuple[Schedule, ...]:
     :return: the tuple of tasks schedules.
     """
 
-    # pylint: disable=import-outside-toplevel
-    # pylint: disable=cyclic-import
     from immuni_analytics.tasks.store_ingested_data import store_ingested_data
-
-    # pylint: disable=import-outside-toplevel
-    # pylint: disable=cyclic-import
     from immuni_analytics.tasks.delete_old_data import delete_old_data
 
     # TODO: move to common
@@ -67,6 +56,21 @@ def _get_schedules() -> Tuple[Schedule, ...]:
     )
 
 
+# pylint: disable=import-outside-toplevel, cyclic-import, no-member
+def _route():
+    from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
+    from immuni_analytics.tasks.delete_old_data import delete_old_data
+    from immuni_analytics.tasks.store_ingested_data import store_ingested_data
+    from immuni_analytics.tasks.store_operational_info import store_operational_info
+
+    return {
+        authorize_analytics_token.name: dict(queue=AnalyticsQueue.WITHOUT_MONGO.value),
+        delete_old_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
+        store_ingested_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
+        store_operational_info.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
+    }
+
+
 @worker_process_init.connect
 def worker_process_init_listener(**kwargs: Any) -> None:
     """
@@ -75,16 +79,12 @@ def worker_process_init_listener(**kwargs: Any) -> None:
     :param kwargs: the keyword arguments passed by Celery, ignored in this case.
     :raises: ImmuniException
     """
-    # The celery inspect needs some time to initialize correctly
-    # sleep(3)
-    # active_queues_lists = celery_app.control.inspect().active_queues()
-    # worker_queues = [
-    #     queue_info["name"] for active_queue_list in active_queues_lists.values() for queue_info in active_queue_list
-    # ]
-    # if len(worker_queues) != 1:
-    #     raise ImmuniException("More than one queue specified for celery worker. ")
 
-    asyncio.run(managers.initialize(initialize_mongo=True))
+    asyncio.run(
+        managers.initialize(
+            initialize_mongo=(config.CELERY_WORKER_QUEUE == AnalyticsQueue.WITH_MONGO)
+        )
+    )
 
 
 @worker_process_shutdown.connect
@@ -102,6 +102,6 @@ celery_app = CeleryApp(
     broker_redis_url=config.CELERY_BROKER_REDIS_URL,
     always_eager=config.CELERY_ALWAYS_EAGER,
     schedules_function=_get_schedules,
-    routes_function=route,
+    routes_function=_route,
     tasks_module=tasks,
 )
