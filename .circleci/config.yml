@@ -55,7 +55,7 @@ commands:
       - run:
           name: "[python] Install Poetry"
           working_directory: .
-          command: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/<< parameters.poetry_sha >>/get-poetry.py | python
+          command: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/<< parameters.poetry_version >>/get-poetry.py | python
       - save_cache:
           name: "[python] Save the Poetry cache"
           key: poetry-<< parameters.poetry_version >>
