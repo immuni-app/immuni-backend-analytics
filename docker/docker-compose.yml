@@ -1,11 +1,14 @@
 version: '3.4'
 
+x-common-environment: &common-environment
+  ENV: development
+  ANALYTICS_MONGO_URL: "mongodb://mongo:27017"
+  ANALYTICS_BROKER_REDIS_URL: "redis://analytics_redis:6379/0"
+  CELERY_BROKER_REDIS_URL: "redis://celery_redis:6379/0"
+
 x-common-service: &common-service
   environment:
-    ENV: development
-    ANALYTICS_MONGO_URL: "mongodb://mongo:27017"
-    ANALYTICS_BROKER_REDIS_URL: "redis://analytics_redis:6379/0"
-    CELERY_BROKER_REDIS_URL: "redis://celery_redis:6379/0"
+    <<: *common-environment
   depends_on:
     - mongo
     - analytics_redis
@@ -19,14 +22,34 @@ x-common-build: &common-build
   dockerfile: ./common/Dockerfile
 
 services:
+  api:
+    <<: *common-service
+    image: api
+    ports:
+      - "5000:5000"
+    build:
+      <<: *common-build
+      target: api
   beat:
     <<: *common-service
     image: beat
     build:
       <<: *common-build
       target: beat
-  worker:
+  worker_mongo:
     <<: *common-service
+    environment:
+      <<: *common-environment
+      CELERY_WORKER_QUEUE: "with_mongo"
+    image: worker
+    build:
+      <<: *common-build
+      target: worker
+  worker_redis:
+    <<: *common-service
+    environment:
+      <<: *common-environment
+      CELERY_WORKER_QUEUE: "without_mongo"
     image: worker
     build:
       <<: *common-build
