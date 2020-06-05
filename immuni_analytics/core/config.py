@@ -15,6 +15,7 @@ import logging
 
 from decouple import config
 
+from immuni_analytics.models.enums import AnalyticsQueue
 from immuni_common.core.config import ENV
 from immuni_common.helpers.config import load_certificate, validate_crontab
 from immuni_common.models.enums import Environment
@@ -45,6 +46,9 @@ APPLE_CERTIFICATE_KEY = config(
 APPLE_KEY_ID = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID = config("APPLE_TEAM_ID", default="")
 
+CELERY_WORKER_QUEUE: AnalyticsQueue = config(
+    "CELERY_WORKER_QUEUE", cast=AnalyticsQueue.from_env_var, default=AnalyticsQueue.WITH_MONGO
+)
 DATA_RETENTION_DAYS: int = config("DATA_RETENTION_DAYS", cast=int, default=30)
 MAX_INGESTED_ELEMENTS: int = config("MAX_INGESTED_ELEMENTS", cast=int, default=100)
 DELETE_OLD_DATA_PERIODICITY: str = config(

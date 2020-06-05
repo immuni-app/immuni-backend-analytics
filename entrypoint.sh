@@ -22,7 +22,6 @@ case "$1" in
             --app=immuni_analytics.celery.celery_app \
             --concurrency=${CELERY_WORKER_CONCURRENCY} \
             --queues=${CELERY_WORKER_QUEUE} \
-            --hostname=${CELERY_WORKER_QUEUE} \
             --task-events \
             --without-gossip \
             --without-mingle \

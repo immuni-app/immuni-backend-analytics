@@ -11,17 +11,13 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+from immuni_common.models.enums import EnvarEnum
 
-def route():
-    from immuni_analytics.celery import AnalyticsQueue
-    from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
-    from immuni_analytics.tasks.delete_old_data import delete_old_data
-    from immuni_analytics.tasks.store_ingested_data import store_ingested_data
-    from immuni_analytics.tasks.store_operational_info import store_operational_info
 
-    return {
-        authorize_analytics_token.name: dict(queue=AnalyticsQueue.WITHOUT_MONGO.value),
-        delete_old_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
-        store_ingested_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
-        store_operational_info.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
-    }
+class AnalyticsQueue(EnvarEnum):
+    """
+    Enumeration of the possible celery queues for the analytics service.
+    """
+
+    WITHOUT_MONGO = "without_mongo"
+    WITH_MONGO = "with_mongo"
