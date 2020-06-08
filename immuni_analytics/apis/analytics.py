@@ -52,6 +52,11 @@ bp = Blueprint("operational-info", url_prefix="/analytics")
 @doc.consumes(doc.Boolean(name="Immuni-Dummy-Data", required=True), location="headers")
 @doc.consumes(OperationalInfo, location="body")
 @doc.consumes(HeaderImmuniContentTypeJson(), location="header", required=True)
+@doc.consumes(
+    doc.String(name="Authorization", description="Bearer <ANALYTICS_TOKEN>"),
+    location="header",
+    required=True,
+)
 @doc_exception(SchemaValidationException)
 @doc.response(
     HTTPStatus.NO_CONTENT.value, None, description="Well-formed request.",
