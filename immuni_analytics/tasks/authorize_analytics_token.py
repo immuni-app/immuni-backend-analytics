@@ -12,8 +12,10 @@
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import random
 
 from immuni_analytics.celery import celery_app
+from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.device_check import fetch_device_check_bits, set_device_check_bits
 from immuni_analytics.helpers.redis import (
@@ -39,7 +41,9 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
     try:
         # TODO wait time between one step and the next one
         await _first_step(device_token)
+        await asyncio.sleep(random.uniform(1, config.CHECK_TIME))
         await _second_step(device_token)
+        await asyncio.sleep(random.uniform(1, config.READ_TIME))
         await _third_step(device_token)
     except DiscardAnalyticsTokenException:
         return
