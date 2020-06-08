@@ -56,6 +56,8 @@ DELETE_OLD_DATA_PERIODICITY: str = config(
     cast=validate_crontab("DELETE_OLD_DATA_PERIODICITY"),
     default="0 0 * * *",
 )
+READ_TIME: int = config("READ_TIME", cast=int, default=3)
+CHECK_TIME: int = config("CHECK_TIME", cast=int, default=7)
 STORE_INGESTED_DATA_PERIODICITY: str = config(
     "STORE_INGESTED_DATA_PERIODICITY",
     cast=validate_crontab("STORE_INGESTED_DATA_PERIODICITY"),
