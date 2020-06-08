@@ -10,21 +10,28 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
-
+import logging
 from datetime import date
 from http import HTTPStatus
-from typing import Optional
 
+from marshmallow import fields
 from mongoengine import StringField
 from sanic import Blueprint
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from sanic_openapi import doc
 
+from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
+from immuni_analytics.helpers import safety_net
 from immuni_analytics.helpers.redis import get_authorized_tokens_redis_key_current_month
+from immuni_analytics.helpers.safety_net import SafetyNetVerificationError
 from immuni_analytics.models.operational_info import OperationalInfo as OperationalInfoDocument
-from immuni_analytics.models.swagger import AuthorizationBody, OperationalInfo
+from immuni_analytics.models.swagger import (
+    AppleOperationalInfo,
+    AuthorizationBody,
+    GoogleOperationalInfo,
+)
 from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
 from immuni_analytics.tasks.store_operational_info import store_operational_info
 from immuni_common.core.exceptions import SchemaValidationException
@@ -40,6 +47,8 @@ from immuni_common.models.marshmallow.fields import (
 )
 from immuni_common.models.swagger import HeaderImmuniContentTypeJson
 
+_LOGGER = logging.getLogger(__name__)
+
 bp = Blueprint("operational-info", url_prefix="/analytics")
 
 
@@ -50,7 +59,7 @@ bp = Blueprint("operational-info", url_prefix="/analytics")
     " in the database."
 )
 @doc.consumes(doc.Boolean(name="Immuni-Dummy-Data", required=True), location="headers")
-@doc.consumes(OperationalInfo, location="body")
+@doc.consumes(AppleOperationalInfo, location="body")
 @doc.consumes(HeaderImmuniContentTypeJson(), location="header", required=True)
 @doc.consumes(
     doc.String(name="Authorization", description="Bearer <ANALYTICS_TOKEN>"),
@@ -153,5 +162,87 @@ async def authorize_token(
 
     if platform == Platform.IOS:
         authorize_analytics_token.delay(analytics_token, device_token)
+
+    return json_response(body=None, status=HTTPStatus.NO_CONTENT)
+
+
+@bp.route("google/operational-info", methods=["POST"], version=1)
+@doc.summary("Upload android operational info (caller: Mobile Client.)")
+@doc.description(
+    "Check if the signed attestation is genuine and save the operational information in "
+    "the database."
+)
+@doc.consumes(doc.Boolean(name="Immuni-Dummy-Data", required=True), location="header")
+@doc.consumes(HeaderImmuniContentTypeJson(), location="header", required=True)
+@doc.consumes(GoogleOperationalInfo, location="body")
+@doc_exception(SchemaValidationException)
+@doc.response(
+    HTTPStatus.NO_CONTENT.value, None, description="Well-formed request.",
+)
+@validate(
+    location=Location.HEADERS,
+    is_dummy=IntegerBoolField(
+        required=True,
+        data_key="Immuni-Dummy-Data",
+        allow_strings=True,
+        description="Whether the current request is a dummy request. Dummy requests are ignored.",
+    ),
+)
+@validate(
+    location=Location.JSON,
+    province=Province(),
+    exposure_permission=IntegerBoolField(required=True),
+    bluetooth_active=IntegerBoolField(required=True),
+    notification_permission=IntegerBoolField(required=True),
+    exposure_notification=IntegerBoolField(required=True),
+    last_risky_exposure_on=IsoDate(),
+    salt=fields.String(required=True),
+    signed_attestation=fields.String(required=True),
+)
+async def post_android_operational_info(
+    request: Request,
+    is_dummy: bool,
+    province: str,
+    exposure_permission: bool,
+    bluetooth_active: bool,
+    notification_permission: bool,
+    exposure_notification: bool,
+    last_risky_exposure_on: date,
+    salt: str,
+    signed_attestation: str,
+) -> HTTPResponse:
+    """
+    Check if the signed attestation is valid and the salt has not been used
+    recently. In case of success save the operational_info.
+    """
+    if is_dummy:
+        return json_response(body=None, status=HTTPStatus.NO_CONTENT)
+
+    if await managers.analytics_redis.get(safety_net.get_redis_key(salt)):
+        _LOGGER.warning(
+            "Found previously used salt.",
+            extra=dict(signed_attestation=signed_attestation, salt=salt),
+        )
+        return json_response(body=None, status=HTTPStatus.NO_CONTENT)
+
+    operational_info = OperationalInfoDocument(
+        platform=Platform.ANDROID,
+        province=province,
+        exposure_permission=exposure_permission,
+        bluetooth_active=bluetooth_active,
+        notification_permission=notification_permission,
+        exposure_notification=exposure_notification,
+        last_risky_exposure_on=last_risky_exposure_on,
+    )
+    try:
+        safety_net.verify_attestation(signed_attestation, salt, operational_info)
+    except SafetyNetVerificationError:
+        return json_response(body=None, status=HTTPStatus.NO_CONTENT)
+
+    # this salt cannot be used for the next SAFETY_NET_MAX_SKEW_MINUTES
+    await managers.analytics_redis.set(
+        safety_net.get_redis_key(salt), 1, expire=config.SAFETY_NET_MAX_SKEW_MINUTES * 60
+    )
+    store_operational_info.delay(operational_info.to_mongo())
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)

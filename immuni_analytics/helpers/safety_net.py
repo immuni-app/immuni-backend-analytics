@@ -1,0 +1,247 @@
+#   Copyright (C) 2020 Presidenza del Consiglio dei Ministri.
+#   Please refer to the AUTHORS file for more information.
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as
+#   published by the Free Software Foundation, either version 3 of the
+#   License, or (at your option) any later version.
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU Affero General Public License for more details.
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+import base64
+import binascii
+import json
+import logging
+from datetime import datetime, timedelta
+from hashlib import sha256
+from json import JSONDecodeError
+from typing import Any, Dict, List
+
+import certvalidator
+import jwt
+from certvalidator import CertificateValidator
+from immuni_analytics.models.operational_info import OperationalInfo
+from jwt import DecodeError
+from OpenSSL import crypto
+
+from immuni_analytics.core import config
+from immuni_common.core.exceptions import ImmuniException
+
+_ISSUER_HOSTNAME = "attest.android.com"
+_PACKAGE_NAME = "it.ministerodellasalute.immuni"
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def get_redis_key(salt: str) -> str:
+    """
+    Generate a redis key for a given salt.
+
+    :param salt: the salt corresponding to a request
+    :return: the redis key containing the salt
+    """
+    return f"~safetynet-used-salt:{salt}"
+
+
+class SafetyNetVerificationError(ImmuniException):
+    """Raised when one of the steps in the verification fails"""
+
+
+def _get_jws_part(jws_token: str, index: int) -> str:
+    """
+    Split the jws token in the its different parts and return the specified one.
+
+    :param jws_token: the jws_token to split
+    :param index: the jws_token part to retrieves
+    :return: the jws_token part specified by index
+    """
+    return jws_token.split(".")[index]
+
+
+def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
+    """
+    Parse a base64 jsw part, adding padding if necessary, into a dictionary.
+
+    :param jws_part: the base string to b64decode
+    :return: the decoded string
+    """
+    missing_padding = len(jws_part) % 4
+    if missing_padding != 0:
+        jws_part += "=" * (4 - missing_padding)
+
+    return json.loads(base64.b64decode(jws_part).decode())
+
+
+def _get_jws_header(jws_token: str) -> Dict[str, Any]:
+    """
+    Returns the header of a jws token.
+
+    :param jws_token: the jws token to get the header from
+    :return: the jws token header
+    """
+    return _parse_jws_part(_get_jws_part(jws_token, 0))
+
+
+def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
+    """
+    Returns the payload of a jws token.
+
+    :param jws_token: the jws token to get the payload from
+    :return: the jws token payload
+    """
+    return _parse_jws_part(_get_jws_part(jws_token, 1))
+
+
+def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
+    """
+    Generate the payload nonce from the operational information and the salt.
+    This digest must be the same specified in the client implementation.
+
+    :param operational_info: the operational information related to the SafetyNet payload
+    :param salt: the salt used in the SafetyNet payload
+    :return: a SHA256 encode hash representing the nonce
+    """
+    nonce = (
+        f"{operational_info.province}"
+        f"{int(operational_info.exposure_permission)}"
+        f"{int(operational_info.bluetooth_active)}"
+        f"{int(operational_info.notification_permission)}"
+        f"{int(operational_info.exposure_notification)}"
+        f"{operational_info.last_risky_exposure_on}"
+        f"{salt}"
+    )
+
+    return sha256(nonce.encode("utf-8")).hexdigest()
+
+
+def _verify_certificates(certificates: List) -> crypto.X509:
+    """
+    Validate the SSL certificate chain and use SSL hostname matching to verify that the leaf
+    certificate was issued to the _ISSUER_HOSTNAME
+
+    :param certificates: the list of certificates
+    :return: the leaf certificate
+    """
+    leaf_certificate = crypto.load_certificate(crypto.FILETYPE_ASN1, certificates[0])
+
+    validator = CertificateValidator(leaf_certificate, certificates[1:])
+    validator.validate_tls(_ISSUER_HOSTNAME)
+
+    return leaf_certificate
+
+
+def _verify_signature(jws_token: str, leaf_certificate: crypto.x509) -> None:
+    """
+    Verify that the jws_token has been signed with the public key specified in the header
+
+    :param jws_token: the jws token to validate
+    :param leaf_certificate: the leaf certificate extracted from the jws header
+    """
+    public_key = crypto.dump_publickey(crypto.FILETYPE_PEM, leaf_certificate.get_pubkey())
+
+    jwt.decode(jws_token, public_key)
+
+
+def _validate_payload(
+    payload: Dict[str, Any], operational_info: OperationalInfo, salt: str
+) -> None:
+    """
+    Validate the jws payload.
+
+    :param payload: the jws decoded payload
+    :param operational_info: the device operational information
+    :param salt: the salt sent in the request
+    :raises: SafetyNetVerificationError
+    """
+    lower_bound_skew = (
+        datetime.utcnow() - timedelta(minutes=config.SAFETY_NET_MAX_SKEW_MINUTES)
+    ).timestamp() * 1000
+    upper_bound_skew = (
+        datetime.utcnow() + timedelta(minutes=config.SAFETY_NET_MAX_SKEW_MINUTES)
+    ).timestamp() * 1000
+
+    # TODO apkCertificateDigestSha256
+    if not (
+        lower_bound_skew <= payload["timestampMs"] <= upper_bound_skew
+        and payload["nonce"] == _generate_nonce(operational_info, salt)
+        and payload["apkPackageName"] == _PACKAGE_NAME
+        and payload["basicIntegrity"] is True
+        and payload["ctsProfileMatch"] is True
+        and "HARDWARE_BACKED" in payload["evaluationType"].split(",")
+    ):
+        _LOGGER.warning(
+            "The jws payload did not pass the validation check.",
+            extra=dict(
+                payload=payload,
+                lower_bound_skew=lower_bound_skew,
+                upper_bound_skew=upper_bound_skew,
+            ),
+        )
+        raise SafetyNetVerificationError()
+
+
+def verify_attestation(
+    safety_net_attestation: str, salt: str, operational_info: OperationalInfo
+) -> None:
+    """
+    Verify that the safety_net_payload is valid, signed by Google and formatted as expected.
+
+    :param safety_net_attestation: the SafetyNet attestation to validate
+    :param salt: the salt sent in the request
+    :param operational_info: the device operational information
+    :raises: SafetyNetVerificationError
+    """
+    try:
+        header = _get_jws_header(safety_net_attestation)
+    except (JSONDecodeError, binascii.Error, IndexError) as exc:
+        _LOGGER.warning(
+            "Could not retrieve header from jws token.",
+            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
+        )
+        raise SafetyNetVerificationError()
+
+    if not (certificates_str := header.get("x5c", None)):  # pylint: disable=superfluous-parens
+        _LOGGER.warning(
+            "Could not retrieve certificates from jws header.",
+            extra=dict(safety_net_attestation=safety_net_attestation),
+        )
+        raise SafetyNetVerificationError()
+    try:
+        certificates = [base64.b64decode(c) for c in certificates_str]
+    except binascii.Error as exc:
+        _LOGGER.warning(
+            "Could not decode jws header certificates.",
+            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
+        )
+        raise SafetyNetVerificationError()
+
+    try:
+        leaf_certificate = _verify_certificates(certificates)
+    except certvalidator.errors.ValidationError as exc:
+        _LOGGER.warning(
+            "Could not validate the certificates chain.",
+            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
+        )
+        raise SafetyNetVerificationError()
+    try:
+        _verify_signature(safety_net_attestation, leaf_certificate)
+    except DecodeError as exc:
+        _LOGGER.warning(
+            "Could not verify jws signature.",
+            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
+        )
+        raise SafetyNetVerificationError()
+
+    try:
+        payload = _get_jws_payload(safety_net_attestation)
+    except (JSONDecodeError, binascii.Error, IndexError) as exc:
+        _LOGGER.warning(
+            "Could not retrieve payload from jws token.",
+            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
+        )
+        raise SafetyNetVerificationError()
+
+    _validate_payload(payload, operational_info, salt)

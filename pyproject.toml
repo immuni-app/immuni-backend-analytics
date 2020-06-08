@@ -9,17 +9,20 @@ TEK Chunk and the RPIs in the RPI Database.
 authors = []
 
 [tool.poetry.dependencies]
-aiohttp = "^3.6.2"
-croniter = "^0.3.31"
-cryptography = "^2.9.2"
+aiohttp = "==3.6.2"
+certvalidator = "==0.11.1"
+croniter = "==0.3.31"
+cryptography = "==2.9.2"
 immuni-common = { path = "common", develop = true, extras = ["aioredis", "celery"] }
-pyjwt = "^1.7.1"
-python = "^3.8"
-tenacity = "^6.2.0"
+pycryptodome = "==3.9.7"
+pyjwt = "==1.7.1"
+python = "==3.8"
+pyOpenSSL = "==19.1.0"
+tenacity = "==6.2.0"
 
 [tool.poetry.dev-dependencies]
+freezegun = "==0.3.15"
 immuni-common-dev = { path = "common/dev", develop = true }
-freezegun = "^0.3.15"
 
 [tool.poetry.scripts]
 checks = "common.scripts:checks"
