@@ -43,7 +43,7 @@ from immuni_common.models.swagger import HeaderImmuniContentTypeJson
 bp = Blueprint("operational-info", url_prefix="/analytics")
 
 
-@bp.route("/operational-info", methods=["POST"], version=1)
+@bp.route("apple/operational-info", methods=["POST"], version=1)
 @doc.summary("Upload operational info (caller: Mobile Client.)")
 @doc.description(
     "Check if the analytics_token is authorized to upload and save the operational info"
@@ -72,24 +72,22 @@ bp = Blueprint("operational-info", url_prefix="/analytics")
 )
 @validate(
     location=Location.JSON,
-    platform=EnumField(enum=Platform),
     province=Province(),
     exposure_permission=IntegerBoolField(required=True),
     bluetooth_active=IntegerBoolField(required=True),
     notification_permission=IntegerBoolField(required=True),
     exposure_notification=IntegerBoolField(required=True),
-    last_risky_exposure=IsoDate(),  # TODO: modify common in order to pass required=False
+    last_risky_exposure_on=IsoDate(),
 )
 async def post_operational_info(
     request: Request,
     is_dummy: bool,
-    platform: Platform,
     province: str,
     exposure_permission: bool,
     bluetooth_active: bool,
     notification_permission: bool,
     exposure_notification: bool,
-    last_risky_exposure: Optional[date],
+    last_risky_exposure_on: date,
 ) -> HTTPResponse:
     """
     Check if the analytics_token is authorized and save the operational data
@@ -103,20 +101,20 @@ async def post_operational_info(
     ):
         store_operational_info.delay(
             OperationalInfoDocument(
-                platform=platform,
+                platform=Platform.IOS,
                 province=province,
                 exposure_permission=exposure_permission,
                 bluetooth_active=bluetooth_active,
                 notification_permission=notification_permission,
                 exposure_notification=exposure_notification,
-                last_risky_exposure=last_risky_exposure,
+                last_risky_exposure_on=last_risky_exposure_on,
             ).to_mongo()
         )
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
 
-@bp.route("/token", methods=["POST"], version=1)
+@bp.route("apple/token", methods=["POST"], version=1)
 @doc.summary("Authorize an analytics_token (caller: Mobile Client.)")
 @doc.description(
     "Check if the device_token is genuine and allow the analytics_token to be used as"
