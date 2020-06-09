@@ -28,4 +28,4 @@ class OperationalInfo(Document):
     bluetooth_active = BooleanField(required=True)
     notification_permission = BooleanField(required=True)
     exposure_notification = BooleanField(required=True)
-    last_risky_exposure = DateTimeField(required=False)
+    last_risky_exposure_on = DateTimeField(required=False)
