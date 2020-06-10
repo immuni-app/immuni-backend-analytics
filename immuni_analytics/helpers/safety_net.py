@@ -23,11 +23,11 @@ from typing import Any, Dict, List
 import certvalidator
 import jwt
 from certvalidator import CertificateValidator
-from immuni_analytics.models.operational_info import OperationalInfo
 from jwt import DecodeError
 from OpenSSL import crypto
 
 from immuni_analytics.core import config
+from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.core.exceptions import ImmuniException
 
 _ISSUER_HOSTNAME = "attest.android.com"
@@ -38,35 +38,40 @@ _LOGGER = logging.getLogger(__name__)
 
 def get_redis_key(salt: str) -> str:
     """
-    Generate a redis key for a given salt.
+    Retrieve the redis key for a given salt.
 
-    :param salt: the salt corresponding to a request
-    :return: the redis key containing the salt
+    :param salt: the salt corresponding to a request.
+    :return: the redis key containing the salt.
     """
     return f"~safetynet-used-salt:{salt}"
 
 
 class SafetyNetVerificationError(ImmuniException):
-    """Raised when one of the steps in the verification fails"""
+    """Raised when one of the steps in the verification fails."""
 
 
 def _get_jws_part(jws_token: str, index: int) -> str:
     """
     Split the jws token in the its different parts and return the specified one.
 
-    :param jws_token: the jws_token to split
-    :param index: the jws_token part to retrieves
-    :return: the jws_token part specified by index
+    :param jws_token: the jws_token to split.
+    :param index: the jws_token part to retrieves.
+    :raises: ValueError, IndexError
+    :return: the jws_token part specified by index.
     """
-    return jws_token.split(".")[index]
+
+    if len(parts := jws_token.split(".")) == 3:
+        return parts[index]
+
+    raise ValueError()
 
 
 def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
     """
     Parse a base64 jsw part, adding padding if necessary, into a dictionary.
 
-    :param jws_part: the base string to b64decode
-    :return: the decoded string
+    :param jws_part: the base string to b64decode.
+    :return: the decoded string.
     """
     missing_padding = len(jws_part) % 4
     if missing_padding != 0:
@@ -77,22 +82,50 @@ def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
 
 def _get_jws_header(jws_token: str) -> Dict[str, Any]:
     """
-    Returns the header of a jws token.
+    Retrieve the header of a jws token.
 
-    :param jws_token: the jws token to get the header from
-    :return: the jws token header
+    :param jws_token: the jws token to get the header from.
+    :return: the jws token header.
     """
     return _parse_jws_part(_get_jws_part(jws_token, 0))
 
 
 def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
     """
-    Returns the payload of a jws token.
+    Retrieve the payload of a jws token.
 
-    :param jws_token: the jws token to get the payload from
-    :return: the jws token payload
+    :param jws_token: the jws token to get the payload from.
+    :return: the jws token payload.
     """
     return _parse_jws_part(_get_jws_part(jws_token, 1))
+
+
+def _verify_certificates(certificates: List) -> crypto.X509:
+    """
+    Validate the SSL certificate chain and use SSL hostname matching to verify that the leaf
+    certificate was issued to the _ISSUER_HOSTNAME.
+
+    :param certificates: the list of certificates.
+    :return: the leaf certificate.
+    """
+    leaf_certificate = crypto.load_certificate(crypto.FILETYPE_ASN1, certificates[0])
+
+    validator = CertificateValidator(leaf_certificate, certificates[1:])
+    validator.validate_tls(_ISSUER_HOSTNAME)
+
+    return leaf_certificate
+
+
+def _verify_signature(jws_token: str, leaf_certificate: crypto.x509) -> None:
+    """
+    Verify that the jws_token has been signed with the public key specified in the header.
+
+    :param jws_token: the jws token to validate.
+    :param leaf_certificate: the leaf certificate extracted from the jws header.
+    """
+    public_key = crypto.dump_publickey(crypto.FILETYPE_PEM, leaf_certificate.get_pubkey())
+
+    jwt.decode(jws_token, public_key)
 
 
 def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
@@ -100,9 +133,9 @@ def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
     Generate the payload nonce from the operational information and the salt.
     This digest must be the same specified in the client implementation.
 
-    :param operational_info: the operational information related to the SafetyNet payload
-    :param salt: the salt used in the SafetyNet payload
-    :return: a SHA256 encode hash representing the nonce
+    :param operational_info: the operational information related to the SafetyNet payload.
+    :param salt: the salt used in the SafetyNet payload.
+    :return: a SHA256 encode hash representing the nonce.
     """
     nonce = (
         f"{operational_info.province}"
@@ -117,44 +150,16 @@ def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
     return sha256(nonce.encode("utf-8")).hexdigest()
 
 
-def _verify_certificates(certificates: List) -> crypto.X509:
-    """
-    Validate the SSL certificate chain and use SSL hostname matching to verify that the leaf
-    certificate was issued to the _ISSUER_HOSTNAME
-
-    :param certificates: the list of certificates
-    :return: the leaf certificate
-    """
-    leaf_certificate = crypto.load_certificate(crypto.FILETYPE_ASN1, certificates[0])
-
-    validator = CertificateValidator(leaf_certificate, certificates[1:])
-    validator.validate_tls(_ISSUER_HOSTNAME)
-
-    return leaf_certificate
-
-
-def _verify_signature(jws_token: str, leaf_certificate: crypto.x509) -> None:
-    """
-    Verify that the jws_token has been signed with the public key specified in the header
-
-    :param jws_token: the jws token to validate
-    :param leaf_certificate: the leaf certificate extracted from the jws header
-    """
-    public_key = crypto.dump_publickey(crypto.FILETYPE_PEM, leaf_certificate.get_pubkey())
-
-    jwt.decode(jws_token, public_key)
-
-
 def _validate_payload(
     payload: Dict[str, Any], operational_info: OperationalInfo, salt: str
 ) -> None:
     """
     Validate the jws payload.
 
-    :param payload: the jws decoded payload
-    :param operational_info: the device operational information
-    :param salt: the salt sent in the request
-    :raises: SafetyNetVerificationError
+    :param payload: the jws decoded payload.
+    :param operational_info: the device operational information.
+    :param salt: the salt sent in the request.
+    :raises: SafetyNetVerificationError.
     """
     lower_bound_skew = (
         datetime.utcnow() - timedelta(minutes=config.SAFETY_NET_MAX_SKEW_MINUTES)
@@ -189,14 +194,14 @@ def verify_attestation(
     """
     Verify that the safety_net_payload is valid, signed by Google and formatted as expected.
 
-    :param safety_net_attestation: the SafetyNet attestation to validate
-    :param salt: the salt sent in the request
-    :param operational_info: the device operational information
-    :raises: SafetyNetVerificationError
+    :param safety_net_attestation: the SafetyNet attestation to validate.
+    :param salt: the salt sent in the request.
+    :param operational_info: the device operational information.
+    :raises: SafetyNetVerificationError.
     """
     try:
         header = _get_jws_header(safety_net_attestation)
-    except (JSONDecodeError, binascii.Error, IndexError) as exc:
+    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
         _LOGGER.warning(
             "Could not retrieve header from jws token.",
             extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
@@ -237,7 +242,7 @@ def verify_attestation(
 
     try:
         payload = _get_jws_payload(safety_net_attestation)
-    except (JSONDecodeError, binascii.Error, IndexError) as exc:
+    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
         _LOGGER.warning(
             "Could not retrieve payload from jws token.",
             extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),

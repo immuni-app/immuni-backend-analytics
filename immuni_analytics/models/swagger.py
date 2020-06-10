@@ -13,24 +13,16 @@
 
 from sanic_openapi import doc
 
-from immuni_common.models.enums import Platform
-
 
 class AuthorizationBody:
     """
     Doc model for the token authorization request body.
     """
 
-    platform = doc.String(
-        "The device’s operating system (either iOS or Android)",
-        choices=[p.value for p in Platform],
-    )
     analytics_token = doc.String(
         "The analytics_token to authorize for the operational_info uploads.",
     )
-    device_token = doc.String(
-        "The device token to check against Apple DeviceCheck or Android SafetyNet."
-    )
+    device_token = doc.String("The device token to check against Apple DeviceCheck.")
 
 
 class AppleOperationalInfo:
