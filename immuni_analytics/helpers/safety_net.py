@@ -73,11 +73,10 @@ def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
     :param jws_part: the base string to b64decode.
     :return: the decoded string.
     """
-    missing_padding = len(jws_part) % 4
-    if missing_padding != 0:
-        jws_part += "=" * (4 - missing_padding)
+    padding = "=" * (4 - (len(jws_part) % 4))
+    padded_jws_part = f"{jws_part}{padding}"
 
-    return json.loads(base64.b64decode(jws_part).decode())
+    return json.loads(base64.b64decode(padded_jws_part).decode())
 
 
 def _get_jws_header(jws_token: str) -> Dict[str, Any]:
@@ -164,36 +163,34 @@ def _load_leaf_certificate(certificates: List[bytes]) -> crypto.x509:
         raise SafetyNetVerificationError()
 
 
-def _validate_certificates(leaf_certificate: crypto.X509, certificates: List[bytes]) -> None:
+def _validate_certificates(certificates: List[bytes]) -> None:
     """
     Validate the SSL certificate chain and use SSL hostname matching to verify that the leaf
     certificate was issued to the _ISSUER_HOSTNAME.
 
-    :param leaf_certificate: the loaded leaf certificate, as crypto.x509 object.
-    :param certificates: the certificates in the chain, as list of bytes.
-    :raises SafetyNetVerificationError if either the chain or hostname validation fails.
+    :param certificates: the list of certificates.
+    :return: the leaf certificate.
     """
     try:
-        validator = CertificateValidator(leaf_certificate, certificates[1:])
+        validator = CertificateValidator(certificates[0], certificates[1:])
         validator.validate_tls(_ISSUER_HOSTNAME)
     except certvalidator.errors.ValidationError as exc:
         _LOGGER.warning(
             "Could not validate the certificates chain.",
-            extra=dict(
-                error=str(exc), leaf_certificate=leaf_certificate, certificates=certificates,
-            ),
+            extra=dict(error=str(exc), certificates=certificates,),
         )
         raise SafetyNetVerificationError()
 
 
-def _verify_signature(jws_token: str, leaf_certificate: crypto.x509) -> None:
+def _verify_signature(jws_token: str, certificates: List[bytes]) -> None:
     """
     Verify that the jws_token has been signed with the public key specified in the header.
 
     :param jws_token: the jws token to validate.
-    :param leaf_certificate: the leaf certificate extracted from the jws header.
+    :param certificates: the list of certificates.
     :raises: SafetyNetVerificationError if the signature could not be verified.
     """
+    leaf_certificate = _load_leaf_certificate(certificates)
     public_key = crypto.dump_publickey(crypto.FILETYPE_PEM, leaf_certificate.get_pubkey())
     try:
         jwt.decode(jws_token, public_key)
@@ -278,8 +275,7 @@ def verify_attestation(
     """
     header = _get_jws_header(safety_net_attestation)
     certificates = _get_certificates(header)
-    leaf_certificate = _load_leaf_certificate(certificates)
-    _validate_certificates(leaf_certificate, certificates)
-    _verify_signature(safety_net_attestation, leaf_certificate)
+    _validate_certificates(certificates)
+    _verify_signature(safety_net_attestation, certificates)
     payload = _get_jws_payload(safety_net_attestation)
     _validate_payload(payload, operational_info, salt)
