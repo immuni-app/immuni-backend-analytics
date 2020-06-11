@@ -87,7 +87,15 @@ def _get_jws_header(jws_token: str) -> Dict[str, Any]:
     :param jws_token: the jws token to get the header from.
     :return: the jws token header.
     """
-    return _parse_jws_part(_get_jws_part(jws_token, 0))
+    try:
+        header = _parse_jws_part(_get_jws_part(jws_token, 0))
+    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
+        _LOGGER.warning(
+            "Could not retrieve header from jws token.",
+            extra=dict(error=str(exc), jws_token=jws_token),
+        )
+        raise SafetyNetVerificationError()
+    return header
 
 
 def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
@@ -97,23 +105,69 @@ def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
     :param jws_token: the jws token to get the payload from.
     :return: the jws token payload.
     """
-    return _parse_jws_part(_get_jws_part(jws_token, 1))
+    try:
+        return _parse_jws_part(_get_jws_part(jws_token, 1))
+    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
+        _LOGGER.warning(
+            "Could not retrieve payload from jws token.",
+            extra=dict(error=str(exc), jws_token=jws_token),
+        )
+        raise SafetyNetVerificationError()
 
 
-def _verify_certificates(certificates: List) -> crypto.X509:
+def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
+    try:
+        certificates_string = header["x5c"]
+    except KeyError:
+        _LOGGER.warning(
+            "Could not retrieve certificates from jws header.",
+            extra=dict(header=header),
+        )
+        raise SafetyNetVerificationError()
+
+    try:
+        certificates = [base64.b64decode(c) for c in certificates_string]
+    except binascii.Error as exc:
+        _LOGGER.warning(
+            "Could not decode jws header certificates.",
+            extra=dict(error=str(exc), certificates_string=certificates_string),
+        )
+        raise SafetyNetVerificationError()
+
+    return certificates
+
+
+def _get_leaf_certificate_x509(leaf_certificate_bytes: bytes):
+    try:
+        return crypto.load_certificate(crypto.FILETYPE_ASN1, leaf_certificate_bytes)
+    except certvalidator.errors.ValidationError as exc:
+        _LOGGER.warning(
+            "Could not load the leaf certificate.",
+            extra=dict(error=str(exc), leaf_certificate_bytes=leaf_certificate_bytes),
+        )
+        raise SafetyNetVerificationError()
+
+
+def _validate_certificates(
+        leaf_certificate_x509: crypto.X509,
+        other_certificates_bytes: List[bytes]
+) -> None:
     """
     Validate the SSL certificate chain and use SSL hostname matching to verify that the leaf
     certificate was issued to the _ISSUER_HOSTNAME.
 
-    :param certificates: the list of certificates.
-    :return: the leaf certificate.
+    :param leaf_certificate_x509: the leaf certificate as crypto.x509 object.
+    :param other_certificates_bytes: the other certificates in the chain, as list of bytes.
     """
-    leaf_certificate = crypto.load_certificate(crypto.FILETYPE_ASN1, certificates[0])
-
-    validator = CertificateValidator(leaf_certificate, certificates[1:])
-    validator.validate_tls(_ISSUER_HOSTNAME)
-
-    return leaf_certificate
+    try:
+        validator = CertificateValidator(leaf_certificate_x509, other_certificates_bytes)
+        validator.validate_tls(_ISSUER_HOSTNAME)
+    except certvalidator.errors.ValidationError as exc:
+        _LOGGER.warning(
+            "Could not validate the certificates chain.",
+            extra=dict(error=str(exc), leaf_certificate_x509=leaf_certificate_x509, other_certificates_bytes=other_certificates_bytes),
+        )
+        raise SafetyNetVerificationError()
 
 
 def _verify_signature(jws_token: str, leaf_certificate: crypto.x509) -> None:
@@ -124,8 +178,14 @@ def _verify_signature(jws_token: str, leaf_certificate: crypto.x509) -> None:
     :param leaf_certificate: the leaf certificate extracted from the jws header.
     """
     public_key = crypto.dump_publickey(crypto.FILETYPE_PEM, leaf_certificate.get_pubkey())
-
-    jwt.decode(jws_token, public_key)
+    try:
+        jwt.decode(jws_token, public_key)
+    except DecodeError as exc:
+        _LOGGER.warning(
+            "Could not verify jws signature.",
+            extra=dict(error=str(exc), jws_token=jws_token, public_key=public_key),
+        )
+        raise SafetyNetVerificationError()
 
 
 def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
@@ -199,54 +259,10 @@ def verify_attestation(
     :param operational_info: the device operational information.
     :raises: SafetyNetVerificationError.
     """
-    try:
-        header = _get_jws_header(safety_net_attestation)
-    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
-        _LOGGER.warning(
-            "Could not retrieve header from jws token.",
-            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
-        )
-        raise SafetyNetVerificationError()
-
-    if not (certificates_str := header.get("x5c", None)):  # pylint: disable=superfluous-parens
-        _LOGGER.warning(
-            "Could not retrieve certificates from jws header.",
-            extra=dict(safety_net_attestation=safety_net_attestation),
-        )
-        raise SafetyNetVerificationError()
-    try:
-        certificates = [base64.b64decode(c) for c in certificates_str]
-    except binascii.Error as exc:
-        _LOGGER.warning(
-            "Could not decode jws header certificates.",
-            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
-        )
-        raise SafetyNetVerificationError()
-
-    try:
-        leaf_certificate = _verify_certificates(certificates)
-    except certvalidator.errors.ValidationError as exc:
-        _LOGGER.warning(
-            "Could not validate the certificates chain.",
-            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
-        )
-        raise SafetyNetVerificationError()
-    try:
-        _verify_signature(safety_net_attestation, leaf_certificate)
-    except DecodeError as exc:
-        _LOGGER.warning(
-            "Could not verify jws signature.",
-            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
-        )
-        raise SafetyNetVerificationError()
-
-    try:
-        payload = _get_jws_payload(safety_net_attestation)
-    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
-        _LOGGER.warning(
-            "Could not retrieve payload from jws token.",
-            extra=dict(error=str(exc), safety_net_attestation=safety_net_attestation),
-        )
-        raise SafetyNetVerificationError()
-
+    header = _get_jws_header(safety_net_attestation)
+    certificates = _get_certificates(header)
+    leaf_certificate = _get_leaf_certificate_x509(certificates[0])
+    _validate_certificates(leaf_certificate, other_certificates_bytes=certificates[1:])
+    _verify_signature(safety_net_attestation, leaf_certificate)
+    payload = _get_jws_payload(safety_net_attestation)
     _validate_payload(payload, operational_info, salt)
