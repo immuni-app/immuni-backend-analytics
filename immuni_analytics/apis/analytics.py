@@ -263,7 +263,7 @@ async def post_android_operational_info(
         bluetooth_active=bluetooth_active,
         notification_permission=notification_permission,
         exposure_notification=exposure_notification,
-        last_risky_exposure_on=last_risky_exposure_on,
+        last_risky_exposure_on=last_risky_exposure_on if exposure_notification else None,
     )
     try:
         safety_net.verify_attestation(signed_attestation, salt, operational_info)
