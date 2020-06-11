@@ -137,7 +137,7 @@ def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
     return certificates
 
 
-def _get_leaf_certificate_x509(leaf_certificate_bytes: bytes):
+def _load_leaf_certificate_x509(leaf_certificate_bytes: bytes):
     try:
         return crypto.load_certificate(crypto.FILETYPE_ASN1, leaf_certificate_bytes)
     except certvalidator.errors.ValidationError as exc:
