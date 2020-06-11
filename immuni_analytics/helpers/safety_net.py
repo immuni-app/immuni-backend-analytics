@@ -202,14 +202,14 @@ def _verify_signature(jws_token: str, certificates: List[bytes]) -> None:
         raise SafetyNetVerificationError()
 
 
-def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
+def _generate_nonce(operational_info: OperationalInfo, salt: str) -> bytes:
     """
     Generate the payload nonce from the operational information and the salt.
     This digest must be the same specified in the client implementation.
 
     :param operational_info: the operational information related to the SafetyNet payload.
     :param salt: the salt used in the SafetyNet payload.
-    :return: a SHA256 encode hash representing the nonce.
+    :return: a base64 encoded SHA256 digest representing the nonce.
     """
     nonce = (
         f"{operational_info.province}"
@@ -221,7 +221,7 @@ def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
         f"{salt}"
     )
 
-    return sha256(nonce.encode("utf-8")).hexdigest()
+    return base64.b64encode(sha256(nonce.encode("utf-8")).digest())
 
 
 def _validate_payload(
