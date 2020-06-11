@@ -63,7 +63,7 @@ def _get_jws_part(jws_token: str, index: int) -> str:
     if len(parts := jws_token.split(".")) == 3:
         return parts[index]
 
-    raise ValueError()
+    raise ValueError("The jws token is badly formatted")
 
 
 def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
@@ -202,7 +202,7 @@ def _verify_signature(jws_token: str, certificates: List[bytes]) -> None:
         raise SafetyNetVerificationError()
 
 
-def _generate_nonce(operational_info: OperationalInfo, salt: str) -> bytes:
+def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
     """
     Generate the payload nonce from the operational information and the salt.
     This digest must be the same specified in the client implementation.
@@ -221,7 +221,7 @@ def _generate_nonce(operational_info: OperationalInfo, salt: str) -> bytes:
         f"{salt}"
     )
 
-    return base64.b64encode(sha256(nonce.encode("utf-8")).digest())
+    return base64.b64encode(sha256(nonce.encode("utf-8")).digest()).decode("utf-8")
 
 
 def _validate_payload(
