@@ -10,10 +10,12 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 import logging
 from datetime import date
 from http import HTTPStatus
 
+from aioredis.commands import StringCommandsMixin
 from marshmallow import fields
 from mongoengine import StringField
 from sanic import Blueprint
@@ -48,10 +50,10 @@ from immuni_common.models.swagger import HeaderImmuniContentTypeJson
 
 _LOGGER = logging.getLogger(__name__)
 
-bp = Blueprint("operational-info", url_prefix="/analytics")
+bp = Blueprint("analytics", url_prefix="analytics")
 
 
-@bp.route("apple/operational-info", methods=["POST"], version=1)
+@bp.route("/apple/operational-info", methods=["POST"], version=1)
 @doc.summary("Upload operational info (caller: Mobile Client.)")
 @doc.description(
     "Check if the analytics_token is authorized to upload and save the operational info"
@@ -135,7 +137,7 @@ async def post_operational_info(
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
 
-@bp.route("apple/token", methods=["POST"], version=1)
+@bp.route("/apple/token", methods=["POST"], version=1)
 @doc.summary("Authorize an analytics_token (caller: Mobile Client.)")
 @doc.description(
     "Check if the device_token is genuine and allow the analytics_token to be used as"
@@ -182,7 +184,7 @@ async def authorize_token(
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
 
-@bp.route("google/operational-info", methods=["POST"], version=1)
+@bp.route("/google/operational-info", methods=["POST"], version=1)
 @doc.summary("Upload android operational info (caller: Mobile Client.)")
 @doc.description(
     "Check if the signed attestation is genuine and save the operational information in "
@@ -212,7 +214,7 @@ async def authorize_token(
     notification_permission=IntegerBoolField(required=True),
     exposure_notification=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
-    salt=fields.String(required=True),
+    salt=Base64String(required=True),
     signed_attestation=fields.String(required=True),
 )
 async def post_android_operational_info(
@@ -263,7 +265,7 @@ async def post_android_operational_info(
         bluetooth_active=bluetooth_active,
         notification_permission=notification_permission,
         exposure_notification=exposure_notification,
-        last_risky_exposure_on=last_risky_exposure_on if exposure_notification else None,
+        last_risky_exposure_on=last_risky_exposure_on,
     )
     try:
         safety_net.verify_attestation(signed_attestation, salt, operational_info)
@@ -271,9 +273,20 @@ async def post_android_operational_info(
         return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
     # this salt cannot be used for the next SAFETY_NET_MAX_SKEW_MINUTES
-    await managers.analytics_redis.set(
-        safety_net.get_redis_key(salt), 1, expire=config.SAFETY_NET_MAX_SKEW_MINUTES * 60
-    )
-    store_operational_info.delay(operational_info.to_mongo())
+    if await managers.analytics_redis.set(
+        key=safety_net.get_redis_key(salt),
+        value=1,
+        expire=config.SAFETY_NET_MAX_SKEW_MINUTES * 60,
+        exist=StringCommandsMixin.SET_IF_NOT_EXIST,
+    ):
+        if not exposure_notification:
+            operational_info.last_risky_exposure_on = None
+
+        store_operational_info.delay(operational_info.to_mongo())
+    else:
+        _LOGGER.warning(
+            "Found previously used salt.",
+            extra=dict(signed_attestation=signed_attestation, salt=salt),
+        )
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)

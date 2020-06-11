@@ -13,25 +13,29 @@
 
 import base64
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 from freezegun import freeze_time
 from pytest import mark, raises
 
+from immuni_analytics.core import config
 from immuni_analytics.helpers.safety_net import (
     SafetyNetVerificationError,
+    _get_certificates,
     _get_jws_header,
     _get_jws_part,
     _get_jws_payload,
+    _load_leaf_certificate,
     _parse_jws_part,
+    _validate_certificates,
+    _verify_signature,
     get_redis_key,
     verify_attestation,
 )
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.models.enums import Platform
-
 from tests.fixtures.safety_net import POST_TIMESTAMP
 
 _JWS_EXAMPLE = (
@@ -43,7 +47,7 @@ _JWS_EXAMPLE = (
 
 
 def test_get_redis_key() -> None:
-    assert f"~safetynet-used-salt:my-salt" == get_redis_key("my-salt")
+    assert "~safetynet-used-salt:my-salt" == get_redis_key("my-salt")
 
 
 def test_get_jws_part() -> None:
@@ -113,15 +117,151 @@ def test_get_jws_payload_raises(warning_logger: MagicMock, wrong_jws: str) -> No
     warning_logger.assert_called_once()
 
 
-@freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
-def test_verify(safety_net_post_body: Dict[str, Any]) -> None:
-    operational_info = OperationalInfo(
+def _operational_info_from_post_body(post_body: Dict[str, Any]) -> OperationalInfo:
+    return OperationalInfo(
         platform=Platform.ANDROID,
-        province=safety_net_post_body["province"],
-        exposure_permission=safety_net_post_body["exposure_permission"],
-        bluetooth_active=safety_net_post_body["bluetooth_active"],
-        notification_permission=safety_net_post_body["notification_permission"],
-        exposure_notification=safety_net_post_body["exposure_notification"],
-        last_risky_exposure_on=safety_net_post_body["last_risky_exposure_on"],
+        province=post_body["province"],
+        exposure_permission=post_body["exposure_permission"],
+        bluetooth_active=post_body["bluetooth_active"],
+        notification_permission=post_body["notification_permission"],
+        exposure_notification=post_body["exposure_notification"],
+        last_risky_exposure_on=post_body["last_risky_exposure_on"],
     )
-    verify_attestation(safety_net_post_body["signed_attestation"], safety_net_post_body["salt"], operational_info)
+
+
+@freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
+def test_verify(safety_net_post_body_with_exposure: Dict[str, Any]) -> None:
+    operational_info = _operational_info_from_post_body(safety_net_post_body_with_exposure)
+    verify_attestation(
+        safety_net_post_body_with_exposure["signed_attestation"],
+        safety_net_post_body_with_exposure["salt"],
+        operational_info,
+    )
+
+
+@freeze_time(
+    datetime.utcfromtimestamp(POST_TIMESTAMP)
+    - timedelta(minutes=config.SAFETY_NET_MAX_SKEW_MINUTES + 1)
+)
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_verify_raises_if_too_skewed(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    operational_info = _operational_info_from_post_body(safety_net_post_body_with_exposure)
+    with raises(SafetyNetVerificationError):
+        verify_attestation(
+            safety_net_post_body_with_exposure["signed_attestation"],
+            safety_net_post_body_with_exposure["salt"],
+            operational_info,
+        )
+
+    warning_logger.assert_called_once()
+
+
+@freeze_time(
+    datetime.utcfromtimestamp(POST_TIMESTAMP)
+    - timedelta(minutes=config.SAFETY_NET_MAX_SKEW_MINUTES + 1)
+)
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_verify_raises_if_nonce_changes(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    safety_net_post_body_with_exposure["salt"] = "random_string"
+    operational_info = _operational_info_from_post_body(safety_net_post_body_with_exposure)
+    with raises(SafetyNetVerificationError):
+        verify_attestation(
+            safety_net_post_body_with_exposure["signed_attestation"],
+            safety_net_post_body_with_exposure["salt"],
+            operational_info,
+        )
+
+    warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_get_certificate_raises_if_missing_key(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    header.pop("x5c")
+
+    with raises(SafetyNetVerificationError):
+        _get_certificates(header)
+    warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_get_certificate_raises_if_wrong_encoding(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    header["x5c"][0] = "non_base64_string"
+    with raises(SafetyNetVerificationError):
+        _get_certificates(header)
+    warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_validate_certificate_raises_if_wrong_path(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    certificates = _get_certificates(header)
+    certificates.reverse()
+
+    with raises(SafetyNetVerificationError):
+        _validate_certificates(certificates)
+    warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_validate_certificate_raises_if_wrong_issuer(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    certificates = _get_certificates(header)
+    with patch("immuni_analytics.helpers.safety_net._ISSUER_HOSTNAME", "wrong.issuer.com"):
+        with raises(SafetyNetVerificationError):
+            _validate_certificates(certificates)
+    warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_raises_if_invalid_leaf(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    certificates = _get_certificates(header)
+    certificates[0] = certificates[0][:20] + certificates[0][22:]
+    with raises(SafetyNetVerificationError):
+        _load_leaf_certificate(certificates)
+    warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_verify_signature_raises_if_wrong_leaf(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    attestation = safety_net_post_body_with_exposure["signed_attestation"]
+    header = _get_jws_header(attestation)
+    certificates = _get_certificates(header)
+    certificates.reverse()
+    with raises(SafetyNetVerificationError):
+        _verify_signature(attestation, certificates)
+    warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_verify_signature_raises_if_wrong_signature(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    attestation = safety_net_post_body_with_exposure["signed_attestation"]
+    header = _get_jws_header(attestation)
+    certificates = _get_certificates(header)
+
+    wrong_attestation_signature = ".".join(
+        attestation.split(".")[:2] + [_JWS_EXAMPLE.split(".")[2]]
+    )
+    with raises(SafetyNetVerificationError):
+        _verify_signature(wrong_attestation_signature, certificates)
+    warning_logger.assert_called_once()

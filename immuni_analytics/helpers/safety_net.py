@@ -32,6 +32,7 @@ from immuni_common.core.exceptions import ImmuniException
 
 _ISSUER_HOSTNAME = "attest.android.com"
 _PACKAGE_NAME = "it.ministerodellasalute.immuni"
+_APK_DIGEST = "ptpbAuigqeW53HAAJEkAM9s1J8dNm5oFFdBxPBHsFsU=" # TODO use the production one, evaluate putting in env variable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ def _load_leaf_certificate(certificates: List[bytes]) -> crypto.x509:
     leaf_certificate = certificates[0]
     try:
         return crypto.load_certificate(crypto.FILETYPE_ASN1, leaf_certificate)
-    except certvalidator.errors.ValidationError as exc:
+    except crypto.Error as exc:
         _LOGGER.warning(
             "Could not load the leaf certificate.",
             extra=dict(error=str(exc), leaf_certificate=leaf_certificate),
@@ -242,11 +243,11 @@ def _validate_payload(
         datetime.utcnow() + timedelta(minutes=config.SAFETY_NET_MAX_SKEW_MINUTES)
     ).timestamp() * 1000
 
-    # TODO apkCertificateDigestSha256
     if not (
         lower_bound_skew <= payload["timestampMs"] <= upper_bound_skew
         and payload["nonce"] == _generate_nonce(operational_info, salt)
         and payload["apkPackageName"] == _PACKAGE_NAME
+        and payload["apkCertificateDigestSha256"][0] == _APK_DIGEST
         and payload["basicIntegrity"] is True
         and payload["ctsProfileMatch"] is True
         and "HARDWARE_BACKED" in payload["evaluationType"].split(",")
