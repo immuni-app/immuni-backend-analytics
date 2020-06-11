@@ -86,6 +86,7 @@ def _get_jws_header(jws_token: str) -> Dict[str, Any]:
 
     :param jws_token: the jws token to get the header from.
     :return: the jws token header.
+    :raises: SafetyNetVerificationError if the header could not be retrieved.
     """
     try:
         header = _parse_jws_part(_get_jws_part(jws_token, 0))
@@ -104,6 +105,7 @@ def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
 
     :param jws_token: the jws token to get the payload from.
     :return: the jws token payload.
+    :raises: SafetyNetVerificationError if the payload could not be retrieved.
     """
     try:
         return _parse_jws_part(_get_jws_part(jws_token, 1))
@@ -116,12 +118,18 @@ def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
 
 
 def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
+    """
+    Retrieve the certificates from the jws header.
+
+    :param header: the jws header.
+    :raises: SafetyNetVerificationError if the certificates could not be retrieved or decoded.
+    "
+    """
     try:
         certificates_string = header["x5c"]
     except KeyError:
         _LOGGER.warning(
-            "Could not retrieve certificates from jws header.",
-            extra=dict(header=header),
+            "Could not retrieve certificates from the jws header.", extra=dict(header=header),
         )
         raise SafetyNetVerificationError()
 
@@ -129,7 +137,7 @@ def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
         certificates = [base64.b64decode(c) for c in certificates_string]
     except binascii.Error as exc:
         _LOGGER.warning(
-            "Could not decode jws header certificates.",
+            "Could not decode the jws header certificates.",
             extra=dict(error=str(exc), certificates_string=certificates_string),
         )
         raise SafetyNetVerificationError()
@@ -137,35 +145,43 @@ def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
     return certificates
 
 
-def _load_leaf_certificate_x509(leaf_certificate_bytes: bytes):
+def _load_leaf_certificate(certificates: List[bytes]) -> crypto.x509:
+    """
+    Load the lead certificate give the list of certificates.
+
+    :param certificates: the list of certificates.
+    :return: the loaded leaf certificate.
+    :raises: SafetyNetVerificationError if the leaf certificate could not be loaded.
+    """
+    leaf_certificate = certificates[0]
     try:
-        return crypto.load_certificate(crypto.FILETYPE_ASN1, leaf_certificate_bytes)
+        return crypto.load_certificate(crypto.FILETYPE_ASN1, leaf_certificate)
     except certvalidator.errors.ValidationError as exc:
         _LOGGER.warning(
             "Could not load the leaf certificate.",
-            extra=dict(error=str(exc), leaf_certificate_bytes=leaf_certificate_bytes),
+            extra=dict(error=str(exc), leaf_certificate=leaf_certificate),
         )
         raise SafetyNetVerificationError()
 
 
-def _validate_certificates(
-        leaf_certificate_x509: crypto.X509,
-        other_certificates_bytes: List[bytes]
-) -> None:
+def _validate_certificates(leaf_certificate: crypto.X509, certificates: List[bytes]) -> None:
     """
     Validate the SSL certificate chain and use SSL hostname matching to verify that the leaf
     certificate was issued to the _ISSUER_HOSTNAME.
 
-    :param leaf_certificate_x509: the leaf certificate as crypto.x509 object.
-    :param other_certificates_bytes: the other certificates in the chain, as list of bytes.
+    :param leaf_certificate: the loaded leaf certificate, as crypto.x509 object.
+    :param certificates: the certificates in the chain, as list of bytes.
+    :raises SafetyNetVerificationError if either the chain or hostname validation fails.
     """
     try:
-        validator = CertificateValidator(leaf_certificate_x509, other_certificates_bytes)
+        validator = CertificateValidator(leaf_certificate, certificates[1:])
         validator.validate_tls(_ISSUER_HOSTNAME)
     except certvalidator.errors.ValidationError as exc:
         _LOGGER.warning(
             "Could not validate the certificates chain.",
-            extra=dict(error=str(exc), leaf_certificate_x509=leaf_certificate_x509, other_certificates_bytes=other_certificates_bytes),
+            extra=dict(
+                error=str(exc), leaf_certificate=leaf_certificate, certificates=certificates,
+            ),
         )
         raise SafetyNetVerificationError()
 
@@ -176,6 +192,7 @@ def _verify_signature(jws_token: str, leaf_certificate: crypto.x509) -> None:
 
     :param jws_token: the jws token to validate.
     :param leaf_certificate: the leaf certificate extracted from the jws header.
+    :raises: SafetyNetVerificationError if the signature could not be verified.
     """
     public_key = crypto.dump_publickey(crypto.FILETYPE_PEM, leaf_certificate.get_pubkey())
     try:
@@ -219,7 +236,7 @@ def _validate_payload(
     :param payload: the jws decoded payload.
     :param operational_info: the device operational information.
     :param salt: the salt sent in the request.
-    :raises: SafetyNetVerificationError.
+    :raises: SafetyNetVerificationError if at least one requirement is not met.
     """
     lower_bound_skew = (
         datetime.utcnow() - timedelta(minutes=config.SAFETY_NET_MAX_SKEW_MINUTES)
@@ -257,12 +274,12 @@ def verify_attestation(
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.
     :param operational_info: the device operational information.
-    :raises: SafetyNetVerificationError.
+    :raises: SafetyNetVerificationError if any of the retrieval or validation steps fail.
     """
     header = _get_jws_header(safety_net_attestation)
     certificates = _get_certificates(header)
-    leaf_certificate = _get_leaf_certificate_x509(certificates[0])
-    _validate_certificates(leaf_certificate, other_certificates_bytes=certificates[1:])
+    leaf_certificate = _load_leaf_certificate(certificates)
+    _validate_certificates(leaf_certificate, certificates)
     _verify_signature(safety_net_attestation, leaf_certificate)
     payload = _get_jws_payload(safety_net_attestation)
     _validate_payload(payload, operational_info, salt)
