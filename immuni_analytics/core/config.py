@@ -40,6 +40,7 @@ CELERY_ALWAYS_EAGER: bool = config(
     "CELERY_ALWAYS_EAGER", cast=bool, default=ENV == Environment.TESTING
 )
 
+ANALYTICS_TOKEN_SIZE: int = config("ANALYTICS_TOKEN_SIZE", cast=int, default=128)
 APPLE_CERTIFICATE_KEY = config(
     "APPLE_CERTIFICATE_KEY", cast=load_certificate("APPLE_CERTIFICATE_KEY"), default=""
 )

@@ -59,11 +59,12 @@ def after_log() -> Callable[[RetryCallState], None]:
 )
 async def post_with_retry(
     session: ClientSession, *, url: str, json: Dict[str, Any], headers: Dict[str, str]
-) -> ClientResponse:
+) -> bytes:
     """
     Wrapper around aiohttp post with retry strategy.
-    :raises: BadFormatRequestError, ServerUnavailableError, ClientUnavailableError, TimeoutError
-    :return: the client respons if successful
+
+    :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError
+    :return: the client response if successful
     """
     # TODO timeout from config
     async with session.post(
@@ -74,4 +75,4 @@ async def post_with_retry(
         if response.status >= 400:
             raise BadFormatRequestError()
 
-        return response
+        return await response.read()

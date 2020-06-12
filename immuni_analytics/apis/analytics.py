@@ -16,12 +16,13 @@ from datetime import date
 from http import HTTPStatus
 
 from marshmallow import fields
-from mongoengine import StringField
+from marshmallow.validate import Regexp
 from sanic import Blueprint
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from sanic_openapi import doc
 
+from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
 from immuni_analytics.helpers.redis import get_authorized_tokens_redis_key_current_month
@@ -159,7 +160,7 @@ async def post_operational_info(
 )
 @validate(
     location=Location.JSON,
-    analytics_token=StringField(required=True),  # TODO: validate
+    analytics_token=fields.String(required=True, validate=Regexp(rf"^[a-f0-9]{{{config.ANALYTICS_TOKEN_SIZE}}}$")),
     device_token=Base64String(required=True),  # TODO: validate
 )
 async def authorize_token(
@@ -178,9 +179,9 @@ async def authorize_token(
         return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
     if await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=True), request.token
+        get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token
     ) or await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=False), request.token
+        get_authorized_tokens_redis_key_current_month(with_exposure=False), analytics_token
     ):
         return json_response(body=None, status=HTTPStatus.CREATED)
 

@@ -10,15 +10,15 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
-
+import json
 import logging
 import uuid
 from datetime import datetime
-from json import JSONDecodeError
 from typing import Any, Dict
 
 import jwt
 from aiohttp import ClientError, ClientSession
+from sanic.response import json
 
 from immuni_analytics.core import config
 from immuni_analytics.helpers.request import (
@@ -100,12 +100,11 @@ async def fetch_device_check_bits(token: str) -> DeviceCheckData:
         except (ClientError, TimeoutError, ServerUnavailableError) as exc:
             raise DeviceCheckApiError from exc
 
-        # if the bits have never been set the api returns 200 with a specific string and the
-        # json method fails
-        try:
-            return DeviceCheckData(**(await response.json()))
-        except JSONDecodeError:
+        # if the bits have never been set the api returns 200 with a specific string
+        if response.decode('utf-8') == "Failed to find bit state":
             return DeviceCheckData(bit0=False, bit1=False, last_update_time=None)
+        else:
+            return DeviceCheckData(**(json.loads(response)))
 
 
 async def set_device_check_bits(token: str, *, bit0: bool, bit1: bool) -> None:
