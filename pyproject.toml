@@ -16,7 +16,7 @@ cryptography = "==2.9.2"
 immuni-common = { path = "common", develop = true, extras = ["aioredis", "celery"] }
 pycryptodome = "==3.9.7"
 pyjwt = "==1.7.1"
-python = "==3.8"
+python = "^3.8"
 pyOpenSSL = "==19.1.0"
 tenacity = "==6.2.0"
 
