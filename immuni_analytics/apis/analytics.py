@@ -174,7 +174,7 @@ async def authorize_token(
     :param is_dummy: whether the uploaded data is dummy or not.
     :param analytics_token: the analytics_token to authorize for the operational_info uploads.
     :param device_token: the device token to check against Apple DeviceCheck.
-    :return: 201 if the token has been authorized already, 200 otherwise.
+    :return: 201 if the token has been authorized already, 202 otherwise.
     """
     if is_dummy:
         return json_response(body=None, status=HTTPStatus.NO_CONTENT)
