@@ -17,6 +17,7 @@ from immuni_common.helpers.tests import check_environment, check_mongo_url
 
 from tests.fixtures.core import *  # noqa isort:skip
 from tests.fixtures.exposure_data import *  # noqa isort:skip
+from tests.fixtures.safety_net import *  # noqa isort:skip
 from immuni_common.helpers.tests import monitoring_setup  # noqa isort:skip
 
 

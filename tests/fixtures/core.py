@@ -11,7 +11,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 from asyncio import AbstractEventLoop
-from typing import AsyncGenerator, Awaitable, Callable
+from typing import Awaitable, Callable
 
 from mongoengine import get_db
 from pytest import fixture
@@ -19,6 +19,7 @@ from pytest_sanic.utils import TestClient
 from sanic import Sanic
 
 from immuni_analytics.core.managers import managers
+from immuni_common.helpers.tests import create_no_expired_keys_fixture
 
 
 @fixture(autouse=True)
@@ -49,3 +50,8 @@ def client(
     sanic_custom_client: Callable[[Sanic], Awaitable[TestClient]],
 ) -> TestClient:
     return loop.run_until_complete(sanic_custom_client(sanic))
+
+
+@fixture(autouse=True)
+def ensure_no_unexpired_keys(sanic: Sanic) -> None:
+    create_no_expired_keys_fixture(managers.analytics_redis)

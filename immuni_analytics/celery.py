@@ -13,7 +13,7 @@
 
 import asyncio
 import logging
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from celery.schedules import crontab
 from celery.signals import worker_process_init, worker_process_shutdown
@@ -57,7 +57,7 @@ def _get_schedules() -> Tuple[Schedule, ...]:
 
 
 # pylint: disable=import-outside-toplevel, cyclic-import, no-member
-def _route():
+def _route() -> Dict[str, Dict]:
     from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
     from immuni_analytics.tasks.delete_old_data import delete_old_data
     from immuni_analytics.tasks.store_ingested_data import store_ingested_data

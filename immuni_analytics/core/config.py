@@ -63,3 +63,4 @@ STORE_INGESTED_DATA_PERIODICITY: str = config(
     cast=validate_crontab("STORE_INGESTED_DATA_PERIODICITY"),
     default="* * * * *",
 )
+SAFETY_NET_MAX_SKEW_MINUTES: int = config("SAFETY_NET_MAX_SKEW_MINUTES", cast=int, default=10)
