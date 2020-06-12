@@ -21,7 +21,6 @@ pyOpenSSL = "==19.1.0"
 tenacity = "==6.2.0"
 
 [tool.poetry.dev-dependencies]
-freezegun = "==0.3.15"
 immuni-common-dev = { path = "common/dev", develop = true }
 
 [tool.poetry.scripts]
