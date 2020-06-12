@@ -24,7 +24,10 @@ from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.safety_net import get_redis_key
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.models.enums import Platform
+
+from immuni_analytics.tasks.authorize_safety_net_attestation import _verify_safety_net_attestation
 from tests.fixtures.safety_net import POST_BODY_WITH_EXPOSURE, POST_TIMESTAMP
+from tests.test_helpers.test_safety_net import _operational_info_from_post_body
 
 
 @fixture
@@ -36,11 +39,18 @@ def headers() -> Dict[str, str]:
 async def test_google_operational_info_with_exposure(
     client: TestClient, safety_net_post_body_with_exposure: Dict[str, Any], headers: Dict[str, str]
 ) -> None:
-    response = await client.post(
-        "/v1/analytics/google/operational-info",
-        json=safety_net_post_body_with_exposure,
-        headers=headers,
-    )
+    with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
+        response = await client.post(
+            "/v1/analytics/google/operational-info",
+            json=safety_net_post_body_with_exposure,
+            headers=headers,
+        )
+        # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create a new event loop
+        await _verify_safety_net_attestation(
+            safety_net_post_body_with_exposure["signed_attestation"],
+            safety_net_post_body_with_exposure["salt"],
+            _operational_info_from_post_body(safety_net_post_body_with_exposure)
+        )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 1
@@ -70,11 +80,18 @@ async def test_google_operational_info_without_exposure(
     safety_net_post_body_without_exposure: Dict[str, Any],
     headers: Dict[str, str],
 ) -> None:
-    response = await client.post(
-        "/v1/analytics/google/operational-info",
-        json=safety_net_post_body_without_exposure,
-        headers=headers,
-    )
+    with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
+        response = await client.post(
+            "/v1/analytics/google/operational-info",
+            json=safety_net_post_body_without_exposure,
+            headers=headers,
+        )
+        # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create a new event loop
+        await _verify_safety_net_attestation(
+            safety_net_post_body_without_exposure["signed_attestation"],
+            safety_net_post_body_without_exposure["salt"],
+            _operational_info_from_post_body(safety_net_post_body_without_exposure)
+        )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 1
@@ -130,11 +147,18 @@ async def test_google_operational_info_used_salt(
     safety_net_post_body_with_exposure: Dict[str, Any],
     headers: Dict[str, str],
 ) -> None:
-    response = await client.post(
-        "/v1/analytics/google/operational-info",
-        json=safety_net_post_body_with_exposure,
-        headers=headers,
-    )
+    with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
+        response = await client.post(
+            "/v1/analytics/google/operational-info",
+            json=safety_net_post_body_with_exposure,
+            headers=headers,
+        )
+        # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create a new event loop
+        await _verify_safety_net_attestation(
+            safety_net_post_body_with_exposure["signed_attestation"],
+            safety_net_post_body_with_exposure["salt"],
+            _operational_info_from_post_body(safety_net_post_body_with_exposure)
+        )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 1
@@ -165,29 +189,6 @@ async def test_google_operational_info_used_salt(
             signed_attestation=safety_net_post_body_with_exposure["signed_attestation"],
             salt=safety_net_post_body_with_exposure["salt"],
         ),
-    )
-
-
-@freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
-async def test_google_operational_info_verify_failed(
-    client: TestClient, safety_net_post_body_with_exposure: Dict[str, Any], headers: Dict[str, str]
-) -> None:
-    safety_net_post_body_with_exposure["notification_permission"] = int(
-        not safety_net_post_body_with_exposure["notification_permission"]
-    )
-    response = await client.post(
-        "/v1/analytics/google/operational-info",
-        json=safety_net_post_body_with_exposure,
-        headers=headers,
-    )
-
-    assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 0
-    assert (
-        await managers.analytics_redis.get(
-            get_redis_key(safety_net_post_body_with_exposure["salt"])
-        )
-        is None
     )
 
 

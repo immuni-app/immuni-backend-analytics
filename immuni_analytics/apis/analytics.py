@@ -35,6 +35,7 @@ from immuni_analytics.models.swagger import (
     GoogleOperationalInfo,
 )
 from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
+from immuni_analytics.tasks.authorize_safety_net_attestation import verify_safety_net_attestation
 from immuni_analytics.tasks.store_operational_info import store_operational_info
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import json_response, validate
@@ -267,26 +268,7 @@ async def post_android_operational_info(
         exposure_notification=exposure_notification,
         last_risky_exposure_on=last_risky_exposure_on,
     )
-    try:
-        safety_net.verify_attestation(signed_attestation, salt, operational_info)
-    except SafetyNetVerificationError:
-        return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
-    # this salt cannot be used for the next SAFETY_NET_MAX_SKEW_MINUTES
-    if await managers.analytics_redis.set(
-        key=safety_net.get_redis_key(salt),
-        value=1,
-        expire=config.SAFETY_NET_MAX_SKEW_MINUTES * 60,
-        exist=StringCommandsMixin.SET_IF_NOT_EXIST,
-    ):
-        if not exposure_notification:
-            operational_info.last_risky_exposure_on = None
-
-        store_operational_info.delay(operational_info.to_mongo())
-    else:
-        _LOGGER.warning(
-            "Found previously used salt.",
-            extra=dict(signed_attestation=signed_attestation, salt=salt),
-        )
+    verify_safety_net_attestation.delay(signed_attestation, salt, operational_info.to_mongo())
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
