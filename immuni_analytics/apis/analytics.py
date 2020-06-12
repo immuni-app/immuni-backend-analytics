@@ -15,7 +15,6 @@ import logging
 from datetime import date
 from http import HTTPStatus
 
-from aioredis.commands import StringCommandsMixin
 from marshmallow import fields
 from mongoengine import StringField
 from sanic import Blueprint
@@ -23,11 +22,9 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from sanic_openapi import doc
 
-from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
 from immuni_analytics.helpers.redis import get_authorized_tokens_redis_key_current_month
-from immuni_analytics.helpers.safety_net import SafetyNetVerificationError
 from immuni_analytics.models.operational_info import OperationalInfo as OperationalInfoDocument
 from immuni_analytics.models.swagger import (
     AppleOperationalInfo,
@@ -180,9 +177,16 @@ async def authorize_token(
     if is_dummy:
         return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
+    if await managers.analytics_redis.sismember(
+        get_authorized_tokens_redis_key_current_month(with_exposure=True), request.token
+    ) or await managers.analytics_redis.sismember(
+        get_authorized_tokens_redis_key_current_month(with_exposure=False), request.token
+    ):
+        return json_response(body=None, status=HTTPStatus.CREATED)
+
     authorize_analytics_token.delay(analytics_token, device_token)
 
-    return json_response(body=None, status=HTTPStatus.NO_CONTENT)
+    return json_response(body=None, status=HTTPStatus.ACCEPTED)
 
 
 @bp.route("/google/operational-info", methods=["POST"], version=1)

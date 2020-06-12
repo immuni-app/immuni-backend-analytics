@@ -23,9 +23,8 @@ from pytest_sanic.utils import TestClient
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.safety_net import get_redis_key
 from immuni_analytics.models.operational_info import OperationalInfo
-from immuni_common.models.enums import Platform
-
 from immuni_analytics.tasks.authorize_safety_net_attestation import _verify_safety_net_attestation
+from immuni_common.models.enums import Platform
 from tests.fixtures.safety_net import POST_BODY_WITH_EXPOSURE, POST_TIMESTAMP
 from tests.test_helpers.test_safety_net import _operational_info_from_post_body
 
@@ -49,7 +48,7 @@ async def test_google_operational_info_with_exposure(
         await _verify_safety_net_attestation(
             safety_net_post_body_with_exposure["signed_attestation"],
             safety_net_post_body_with_exposure["salt"],
-            _operational_info_from_post_body(safety_net_post_body_with_exposure)
+            _operational_info_from_post_body(safety_net_post_body_with_exposure),
         )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
@@ -90,7 +89,7 @@ async def test_google_operational_info_without_exposure(
         await _verify_safety_net_attestation(
             safety_net_post_body_without_exposure["signed_attestation"],
             safety_net_post_body_without_exposure["salt"],
-            _operational_info_from_post_body(safety_net_post_body_without_exposure)
+            _operational_info_from_post_body(safety_net_post_body_without_exposure),
         )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
@@ -157,7 +156,7 @@ async def test_google_operational_info_used_salt(
         await _verify_safety_net_attestation(
             safety_net_post_body_with_exposure["signed_attestation"],
             safety_net_post_body_with_exposure["salt"],
-            _operational_info_from_post_body(safety_net_post_body_with_exposure)
+            _operational_info_from_post_body(safety_net_post_body_with_exposure),
         )
 
     assert response.status == HTTPStatus.NO_CONTENT.value

@@ -32,7 +32,7 @@ from immuni_common.core.exceptions import ImmuniException
 
 _ISSUER_HOSTNAME = "attest.android.com"
 _PACKAGE_NAME = "it.ministerodellasalute.immuni"
-_APK_DIGEST = "ptpbAuigqeW53HAAJEkAM9s1J8dNm5oFFdBxPBHsFsU=" # TODO use the production one, evaluate putting in env variable
+_APK_DIGEST = "ptpbAuigqeW53HAAJEkAM9s1J8dNm5oFFdBxPBHsFsU="  # TODO use the production one, evaluate putting in env variable
 
 _LOGGER = logging.getLogger(__name__)
 

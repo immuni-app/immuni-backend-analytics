@@ -16,7 +16,6 @@ from typing import Any, Dict
 
 from aioredis.commands import StringCommandsMixin
 
-
 from immuni_analytics.celery import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
@@ -25,19 +24,26 @@ from immuni_analytics.helpers.safety_net import SafetyNetVerificationError
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_analytics.tasks.store_operational_info import store_operational_info
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
 @celery_app.task()
-def verify_safety_net_attestation(safety_net_attestation: str, salt: str, operational_info: Dict[str, Any]):
+def verify_safety_net_attestation(
+    safety_net_attestation: str, salt: str, operational_info: Dict[str, Any]
+):
     """
      Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
-    asyncio.run(_verify_safety_net_attestation(safety_net_attestation, salt, OperationalInfo(**operational_info)))
+    asyncio.run(
+        _verify_safety_net_attestation(
+            safety_net_attestation, salt, OperationalInfo(**operational_info)
+        )
+    )
 
 
-async def _verify_safety_net_attestation(safety_net_attestation: str, salt: str, operational_info: OperationalInfo):
+async def _verify_safety_net_attestation(
+    safety_net_attestation: str, salt: str, operational_info: OperationalInfo
+):
     """
     Verify that the safety_net_attestation is genuine. Prevent race conditions and save the operational_info.
 
