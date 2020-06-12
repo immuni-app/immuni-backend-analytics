@@ -36,7 +36,7 @@ from immuni_analytics.helpers.safety_net import (
 )
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.models.enums import Platform
-from tests.fixtures.safety_net import POST_TIMESTAMP
+from tests.fixtures.safety_net import POST_TIMESTAMP, TEST_APK_DIGEST
 
 _JWS_EXAMPLE = (
     "eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9."
@@ -132,7 +132,8 @@ def _operational_info_from_post_body(post_body: Dict[str, Any]) -> OperationalIn
 @freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
 def test_verify(safety_net_post_body_with_exposure: Dict[str, Any]) -> None:
     operational_info = _operational_info_from_post_body(safety_net_post_body_with_exposure)
-    verify_attestation(
+    with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_APK_DIGEST", TEST_APK_DIGEST):
+        verify_attestation(
         safety_net_post_body_with_exposure["signed_attestation"],
         safety_net_post_body_with_exposure["salt"],
         operational_info,

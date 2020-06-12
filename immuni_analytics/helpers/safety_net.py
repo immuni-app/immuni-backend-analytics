@@ -32,7 +32,6 @@ from immuni_common.core.exceptions import ImmuniException
 
 _ISSUER_HOSTNAME = "attest.android.com"
 _PACKAGE_NAME = "it.ministerodellasalute.immuni"
-_APK_DIGEST = "ptpbAuigqeW53HAAJEkAM9s1J8dNm5oFFdBxPBHsFsU="  # TODO use the production one, evaluate putting in env variable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -247,7 +246,7 @@ def _validate_payload(
         lower_bound_skew <= payload["timestampMs"] <= upper_bound_skew
         and payload["nonce"] == _generate_nonce(operational_info, salt)
         and payload["apkPackageName"] == _PACKAGE_NAME
-        and payload["apkCertificateDigestSha256"][0] == _APK_DIGEST
+        and payload["apkCertificateDigestSha256"][0] == config.SAFETY_NET_APK_DIGEST
         and payload["basicIntegrity"] is True
         and payload["ctsProfileMatch"] is True
         and "HARDWARE_BACKED" in payload["evaluationType"].split(",")

@@ -51,16 +51,17 @@ CELERY_WORKER_QUEUE: AnalyticsQueue = config(
 )
 DATA_RETENTION_DAYS: int = config("DATA_RETENTION_DAYS", cast=int, default=30)
 MAX_INGESTED_ELEMENTS: int = config("MAX_INGESTED_ELEMENTS", cast=int, default=100)
+CHECK_TIME: int = config("CHECK_TIME", cast=int, default=7)
 DELETE_OLD_DATA_PERIODICITY: str = config(
     "DELETE_OLD_DATA_PERIODICITY",
     cast=validate_crontab("DELETE_OLD_DATA_PERIODICITY"),
     default="0 0 * * *",
 )
 READ_TIME: int = config("READ_TIME", cast=int, default=3)
-CHECK_TIME: int = config("CHECK_TIME", cast=int, default=7)
+SAFETY_NET_MAX_SKEW_MINUTES: int = config("SAFETY_NET_MAX_SKEW_MINUTES", cast=int, default=10)
 STORE_INGESTED_DATA_PERIODICITY: str = config(
     "STORE_INGESTED_DATA_PERIODICITY",
     cast=validate_crontab("STORE_INGESTED_DATA_PERIODICITY"),
     default="* * * * *",
 )
-SAFETY_NET_MAX_SKEW_MINUTES: int = config("SAFETY_NET_MAX_SKEW_MINUTES", cast=int, default=10)
+SAFETY_NET_APK_DIGEST: str = config("SAFETY_NET_APK_DIGEST", default="")

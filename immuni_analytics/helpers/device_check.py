@@ -30,7 +30,7 @@ from immuni_analytics.models.device_check import DeviceCheckData
 
 _LOGGER = logging.getLogger(__name__)
 
-_DEVICE_CHEK_URL = "https://api.development.devicecheck.apple.com/v1"
+_DEVICE_CHEK_URL = "https://api.devicecheck.apple.com/v1"
 _DEVICE_CHECK_GET_BITS_URL = f"{_DEVICE_CHEK_URL}/query_two_bits"
 _DEVICE_CHECK_SET_BITS_URL = f"{_DEVICE_CHEK_URL}/update_two_bits"
 
