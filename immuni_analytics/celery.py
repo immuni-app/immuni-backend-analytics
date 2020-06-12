@@ -62,9 +62,11 @@ def _route() -> Dict[str, Dict]:
     from immuni_analytics.tasks.delete_old_data import delete_old_data
     from immuni_analytics.tasks.store_ingested_data import store_ingested_data
     from immuni_analytics.tasks.store_operational_info import store_operational_info
+    from immuni_analytics.tasks.verify_safety_net_attestation import verify_safety_net_attestation
 
     return {
         authorize_analytics_token.name: dict(queue=AnalyticsQueue.WITHOUT_MONGO.value),
+        verify_safety_net_attestation.name: dict(queue=AnalyticsQueue.WITHOUT_MONGO.value),
         delete_old_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
         store_ingested_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
         store_operational_info.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
