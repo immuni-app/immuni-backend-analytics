@@ -22,7 +22,7 @@ from immuni_analytics.helpers.redis import (
 def test_get_authorized_tokens_with_exposure_redis_key_current_month() -> None:
     assert (
         get_authorized_tokens_redis_key_current_month(with_exposure=True)
-        == "authorized_with_exposure:2020-01-01"
+        == "authorized-with-exposure:2020-01-01"
     )
 
 
@@ -30,7 +30,7 @@ def test_get_authorized_tokens_with_exposure_redis_key_current_month() -> None:
 def test_get_authorized_tokens_without_exposure_redis_key_current_month() -> None:
     assert (
         get_authorized_tokens_redis_key_current_month(with_exposure=False)
-        == "authorized_without_exposure:2020-01-01"
+        == "authorized-without-exposure:2020-01-01"
     )
 
 
@@ -38,7 +38,7 @@ def test_get_authorized_tokens_without_exposure_redis_key_current_month() -> Non
 def test_get_authorized_tokens_with_exposure_redis_key_next_month() -> None:
     assert (
         get_authorized_tokens_redis_key_next_month(with_exposure=True)
-        == "authorized_with_exposure:2020-02-01"
+        == "authorized-with-exposure:2020-02-01"
     )
 
 
@@ -46,7 +46,7 @@ def test_get_authorized_tokens_with_exposure_redis_key_next_month() -> None:
 def test_get_authorized_tokens_without_exposure_redis_key_next_month() -> None:
     assert (
         get_authorized_tokens_redis_key_next_month(with_exposure=False)
-        == "authorized_without_exposure:2020-02-01"
+        == "authorized-without-exposure:2020-02-01"
     )
 
 
@@ -54,5 +54,5 @@ def test_get_authorized_tokens_without_exposure_redis_key_next_month() -> None:
 def test_get_authorized_tokens_without_exposure_redis_key_next_month_year_change() -> None:
     assert (
         get_authorized_tokens_redis_key_next_month(with_exposure=False)
-        == "authorized_without_exposure:2020-01-01"
+        == "authorized-without-exposure:2020-01-01"
     )

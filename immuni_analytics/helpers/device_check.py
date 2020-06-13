@@ -30,20 +30,20 @@ from immuni_analytics.models.device_check import DeviceCheckData
 
 _LOGGER = logging.getLogger(__name__)
 
-_DEVICE_CHEK_URL = "https://api.devicecheck.apple.com/v1"
-_DEVICE_CHECK_GET_BITS_URL = f"{_DEVICE_CHEK_URL}/query_two_bits"
-_DEVICE_CHECK_SET_BITS_URL = f"{_DEVICE_CHEK_URL}/update_two_bits"
+_DEVICE_CHECK_URL = "https://api.development.devicecheck.apple.com/v1"
+_DEVICE_CHECK_GET_BITS_URL = f"{_DEVICE_CHECK_URL}/query_two_bits"
+_DEVICE_CHECK_SET_BITS_URL = f"{_DEVICE_CHECK_URL}/update_two_bits"
 
 
 class DeviceCheckApiError(Exception):
-    """Raised when an error occurs while calling the DeviceCheck API"""
+    """Raised when an error occurs while calling the DeviceCheck API."""
 
 
 def _generate_device_check_jwt() -> str:
     """
     Create an authorization token to query the DeviceCheck API.
 
-    :return: a jwt token as string
+    :return: a jwt token as string.
     """
     return jwt.encode(
         payload={"iss": config.APPLE_TEAM_ID, "iat": int(datetime.utcnow().timestamp())},
@@ -55,18 +55,18 @@ def _generate_device_check_jwt() -> str:
 
 def _generate_headers() -> Dict[str, str]:
     """
-    Create the headers to be sent to the DeviceCheck API
+    Create the headers to be sent to the DeviceCheck API.
 
-    :return: a dictionary containing the Authorization header
+    :return: a dictionary containing the Authorization header.
     """
     return {"Authorization": f"Bearer {_generate_device_check_jwt()}"}
 
 
 def _generate_common_payload() -> Dict[str, Any]:
     """
-    Create the common part of the payload to be sent to the DeviceCheckApi
+    Create the common part of the payload to be sent to the DeviceCheckApi.
 
-    :return: a dictionary containing the transaction id and the current timestamp in milliseconds
+    :return: a dictionary containing the transaction id and the current timestamp in milliseconds.
     """
     return {
         "transaction_id": str(uuid.uuid4()),
@@ -77,9 +77,10 @@ def _generate_common_payload() -> Dict[str, Any]:
 
 async def fetch_device_check_bits(token: str) -> DeviceCheckData:
     """
-    Fetch the two bits from the DeviceCheck API
+    Fetch the two bits from the DeviceCheck API.
 
-    :param token: the base64 encoded device token
+    :param token: the base64 encoded device token.
+    :return: a DeviceCheckData object representing the device bit state.
     """
 
     payload = {
@@ -111,9 +112,9 @@ async def set_device_check_bits(token: str, *, bit0: bool, bit1: bool) -> None:
     """
     Set the two DeviceCheck bits for the given device.
 
-    :param token: the base64 encoded device token
-    :param bit0: the first DeviceCheck bit to set
-    :param bit1: the second DeviceCheck bit to set
+    :param token: the base64 encoded device token.
+    :param bit0: the first DeviceCheck bit to set.
+    :param bit1: the second DeviceCheck bit to set.
     """
     payload = {
         **_generate_common_payload(),

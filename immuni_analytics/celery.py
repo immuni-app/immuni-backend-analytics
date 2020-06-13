@@ -57,7 +57,12 @@ def _get_schedules() -> Tuple[Schedule, ...]:
 
 
 # pylint: disable=import-outside-toplevel, cyclic-import, no-member
-def _route() -> Dict[str, Dict]:
+def _get_routes() -> Dict[str, Dict[str, str]]:
+    """
+    Get static routing of tasks.
+    # NOTE: Tasks need to be imported locally, so as to avoid cyclic dependencies.
+    :return: the dictionary with the queue associated to every task.
+    """
     from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
     from immuni_analytics.tasks.delete_old_data import delete_old_data
     from immuni_analytics.tasks.store_ingested_data import store_ingested_data
@@ -79,7 +84,6 @@ def worker_process_init_listener(**kwargs: Any) -> None:
     Listener on worker initialization to properly initialize the project's managers.
 
     :param kwargs: the keyword arguments passed by Celery, ignored in this case.
-    :raises: ImmuniException
     """
 
     asyncio.run(
@@ -104,6 +108,6 @@ celery_app = CeleryApp(
     broker_redis_url=config.CELERY_BROKER_REDIS_URL,
     always_eager=config.CELERY_ALWAYS_EAGER,
     schedules_function=_get_schedules,
-    routes_function=_route,
+    routes_function=_get_routes,
     tasks_module=tasks,
 )

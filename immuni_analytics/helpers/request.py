@@ -14,7 +14,8 @@
 import logging
 from typing import Any, Callable, Dict
 
-from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientSession, ClientTimeout
+from immuni_common.core.exceptions import ImmuniException
 from tenacity import (
     RetryCallState,
     retry,
@@ -26,11 +27,11 @@ from tenacity import (
 logger = logging.getLogger(__name__)
 
 
-class ServerUnavailableError(Exception):
+class ServerUnavailableError(ImmuniException):
     """Raised when the server returns a 5xx error code"""
 
 
-class BadFormatRequestError(Exception):
+class BadFormatRequestError(ImmuniException):
     """Raised when the server returns a 4xx error code"""
 
 
@@ -42,10 +43,15 @@ def after_log() -> Callable[[RetryCallState], None]:
         exc = retry_state.outcome.exception()
         url = retry_state.kwargs.get("url")
         logger.warning(
-            "HTTP request to url %s failed (attempt %d)",
+            "Failed HTTP request",
             url,
             retry_state.attempt_number,
-            extra=dict(request_args=retry_state, request_kwargs=retry_state.kwargs),
+            extra=dict(
+                exc=exc,
+                request_args=retry_state,
+                request_kwargs=retry_state.kwargs,
+                url=url
+            ),
         )
 
     return log_it
