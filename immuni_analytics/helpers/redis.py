@@ -16,27 +16,38 @@ from immuni_analytics.helpers.date_utils import current_month, next_month
 
 def get_authorized_tokens_redis_key_current_month(with_exposure: bool) -> str:
     """
-    Returns the redis key associated with the authorized analytics tokens for the current month.
+    Generate the redis key associated with the authorized analytics tokens for the current month.
 
     :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
-    with exposure or not
+      with exposure or not
     :return: the redis key
     """
     return (
-        f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:"
+        f"{_authorized_tokens_redis_key_prefix(with_exposure)}:"
         f"{current_month().isoformat()}"
     )
 
 
 def get_authorized_tokens_redis_key_next_month(with_exposure: bool) -> str:
     """
-    Returns the redis key associated with the authorized analytics tokens for the next month.
+    Generate the redis key associated with the authorized analytics tokens for the next month.
 
     :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
-    with exposure or not
+      with exposure or not
     :return: the redis key
     """
     return (
-        f"authorized_{'with_exposure' if with_exposure else 'without_exposure'}:"
+        f"{_authorized_tokens_redis_key_prefix(with_exposure)}:"
         f"{next_month().isoformat()}"
     )
+
+
+def _authorized_tokens_redis_key_prefix(with_exposure: bool) -> str:
+    """
+    Generate the redis key prefix.
+
+    :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
+      with exposure or not
+    :return: the prefix for the redis key.
+    """
+    return f"authorized-{'with-exposure' if with_exposure else 'without-exposure'}"
