@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 @celery_app.task()
 def verify_safety_net_attestation(
     safety_net_attestation: str, salt: str, operational_info: Dict[str, Any]
-):
+) -> None:  # pragma: no cover
     """
      Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
@@ -43,9 +43,10 @@ def verify_safety_net_attestation(
 
 async def _verify_safety_net_attestation(
     safety_net_attestation: str, salt: str, operational_info: OperationalInfo
-):
+) -> None:
     """
-    Verify that the safety_net_attestation is genuine. Prevent race conditions and save the operational_info.
+    Verify that the safety_net_attestation is genuine. Prevent race conditions and save
+     the operational_info.
 
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.

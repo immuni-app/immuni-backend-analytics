@@ -18,7 +18,6 @@ from typing import Any, Dict
 
 import jwt
 from aiohttp import ClientError, ClientSession
-from sanic.response import json
 
 from immuni_analytics.core import config
 from immuni_analytics.helpers.request import (
@@ -101,10 +100,10 @@ async def fetch_device_check_bits(token: str) -> DeviceCheckData:
             raise DeviceCheckApiError from exc
 
         # if the bits have never been set the api returns 200 with a specific string
-        if response.decode('utf-8') == "Failed to find bit state":
+        if response.decode("utf-8") == "Failed to find bit state":
             return DeviceCheckData(bit0=False, bit1=False, last_update_time=None)
-        else:
-            return DeviceCheckData(**(json.loads(response)))
+
+        return DeviceCheckData(**(json.loads(response)))
 
 
 async def set_device_check_bits(token: str, *, bit0: bool, bit1: bool) -> None:

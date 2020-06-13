@@ -22,10 +22,7 @@ def get_authorized_tokens_redis_key_current_month(with_exposure: bool) -> str:
       with exposure or not
     :return: the redis key
     """
-    return (
-        f"{_authorized_tokens_redis_key_prefix(with_exposure)}:"
-        f"{current_month().isoformat()}"
-    )
+    return f"{_authorized_tokens_redis_key_prefix(with_exposure)}:" f"{current_month().isoformat()}"
 
 
 def get_authorized_tokens_redis_key_next_month(with_exposure: bool) -> str:
@@ -36,10 +33,7 @@ def get_authorized_tokens_redis_key_next_month(with_exposure: bool) -> str:
       with exposure or not
     :return: the redis key
     """
-    return (
-        f"{_authorized_tokens_redis_key_prefix(with_exposure)}:"
-        f"{next_month().isoformat()}"
-    )
+    return f"{_authorized_tokens_redis_key_prefix(with_exposure)}:" f"{next_month().isoformat()}"
 
 
 def _authorized_tokens_redis_key_prefix(with_exposure: bool) -> str:

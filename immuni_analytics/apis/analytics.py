@@ -33,8 +33,8 @@ from immuni_analytics.models.swagger import (
     GoogleOperationalInfo,
 )
 from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
-from immuni_analytics.tasks.verify_safety_net_attestation import verify_safety_net_attestation
 from immuni_analytics.tasks.store_operational_info import store_operational_info
+from immuni_analytics.tasks.verify_safety_net_attestation import verify_safety_net_attestation
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import json_response, validate
 from immuni_common.helpers.swagger import doc_exception
@@ -160,7 +160,9 @@ async def post_operational_info(
 )
 @validate(
     location=Location.JSON,
-    analytics_token=fields.String(required=True, validate=Regexp(rf"^[a-f0-9]{{{config.ANALYTICS_TOKEN_SIZE}}}$")),
+    analytics_token=fields.String(
+        required=True, validate=Regexp(rf"^[a-f0-9]{{{config.ANALYTICS_TOKEN_SIZE}}}$")
+    ),
     device_token=Base64String(required=True),  # TODO: validate
 )
 async def authorize_token(

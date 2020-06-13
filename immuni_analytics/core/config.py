@@ -44,7 +44,9 @@ ANALYTICS_TOKEN_SIZE: int = config("ANALYTICS_TOKEN_SIZE", cast=int, default=128
 APPLE_CERTIFICATE_KEY: str = config(
     "APPLE_CERTIFICATE_KEY", cast=load_certificate("APPLE_CERTIFICATE_KEY"), default=""
 )
-APPLE_DEVICE_CHECK_URL: str = config("APPLE__DEVICE_CHECK_URL", default="https://api.development.devicecheck.apple.com/v1")
+APPLE_DEVICE_CHECK_URL: str = config(
+    "APPLE__DEVICE_CHECK_URL", default="https://api.development.devicecheck.apple.com/v1"
+)
 APPLE_KEY_ID: str = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
 
@@ -68,5 +70,6 @@ STORE_INGESTED_DATA_PERIODICITY: str = config(
 )
 SAFETY_NET_APK_DIGEST: str = config("SAFETY_NET_APK_DIGEST", default="")
 SAFETY_NET_ISSUER_HOSTNAME: str = config("SAFETY_NET_ISSUER_HOSTNAME", default="attest.android.com")
-SAFETY_NET_PACKAGE_NAME: str = config("SAFETY_NET_PACKAGE_NAME", default="it.ministerodellasalute.immuni")
-
+SAFETY_NET_PACKAGE_NAME: str = config(
+    "SAFETY_NET_PACKAGE_NAME", default="it.ministerodellasalute.immuni"
+)

@@ -134,10 +134,10 @@ def test_verify(safety_net_post_body_with_exposure: Dict[str, Any]) -> None:
     operational_info = _operational_info_from_post_body(safety_net_post_body_with_exposure)
     with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_APK_DIGEST", TEST_APK_DIGEST):
         verify_attestation(
-        safety_net_post_body_with_exposure["signed_attestation"],
-        safety_net_post_body_with_exposure["salt"],
-        operational_info,
-    )
+            safety_net_post_body_with_exposure["signed_attestation"],
+            safety_net_post_body_with_exposure["salt"],
+            operational_info,
+        )
 
 
 @freeze_time(
@@ -221,7 +221,9 @@ def test_validate_certificate_raises_if_wrong_issuer(
 ) -> None:
     header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
     certificates = _get_certificates(header)
-    with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_ISSUER_HOSTNAME", "wrong.issuer.com"):
+    with patch(
+        "immuni_analytics.helpers.safety_net.config.SAFETY_NET_ISSUER_HOSTNAME", "wrong.issuer.com"
+    ):
         with raises(SafetyNetVerificationError):
             _validate_certificates(certificates)
     warning_logger.assert_called_once()

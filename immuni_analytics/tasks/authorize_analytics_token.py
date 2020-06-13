@@ -109,16 +109,8 @@ async def _add_analytics_token_to_redis(analytics_token: str) -> None:
     Add the analytics token to the sets corresponding to the current and the next months.
     """
     pipe = managers.analytics_redis.pipeline()
-    pipe.sadd(
-        get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token
-    )
-    pipe.sadd(
-        get_authorized_tokens_redis_key_current_month(with_exposure=False), analytics_token
-    )
-    pipe.sadd(
-        get_authorized_tokens_redis_key_next_month(with_exposure=True), analytics_token
-    )
-    pipe.sadd(
-        get_authorized_tokens_redis_key_next_month(with_exposure=False), analytics_token
-    )
+    pipe.sadd(get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token)
+    pipe.sadd(get_authorized_tokens_redis_key_current_month(with_exposure=False), analytics_token)
+    pipe.sadd(get_authorized_tokens_redis_key_next_month(with_exposure=True), analytics_token)
+    pipe.sadd(get_authorized_tokens_redis_key_next_month(with_exposure=False), analytics_token)
     await pipe.execute()

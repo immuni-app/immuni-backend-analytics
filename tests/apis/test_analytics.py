@@ -26,7 +26,7 @@ from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_analytics.tasks.verify_safety_net_attestation import _verify_safety_net_attestation
 from immuni_common.models.enums import Platform
 from tests.fixtures.safety_net import POST_BODY_WITH_EXPOSURE, POST_TIMESTAMP, TEST_APK_DIGEST
-from tests.test_helpers.test_safety_net import _operational_info_from_post_body
+from tests.helpers.test_safety_net import _operational_info_from_post_body
 
 
 @fixture
@@ -45,7 +45,8 @@ async def test_google_operational_info_with_exposure(
                 json=safety_net_post_body_with_exposure,
                 headers=headers,
             )
-            # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create a new event loop
+            # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create
+            #  a new event loop
             await _verify_safety_net_attestation(
                 safety_net_post_body_with_exposure["signed_attestation"],
                 safety_net_post_body_with_exposure["salt"],
@@ -87,7 +88,8 @@ async def test_google_operational_info_without_exposure(
                 json=safety_net_post_body_without_exposure,
                 headers=headers,
             )
-            # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create a new event loop
+            # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create
+            #  a new event loop
             await _verify_safety_net_attestation(
                 safety_net_post_body_without_exposure["signed_attestation"],
                 safety_net_post_body_without_exposure["salt"],
@@ -155,7 +157,8 @@ async def test_google_operational_info_used_salt(
                 json=safety_net_post_body_with_exposure,
                 headers=headers,
             )
-            # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create a new event loop
+            # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create
+            #  a new event loop
             await _verify_safety_net_attestation(
                 safety_net_post_body_with_exposure["signed_attestation"],
                 safety_net_post_body_with_exposure["salt"],

@@ -15,7 +15,6 @@ import logging
 from typing import Any, Callable, Dict
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
-from immuni_common.core.exceptions import ImmuniException
 from tenacity import (
     RetryCallState,
     retry,
@@ -23,6 +22,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+from immuni_common.core.exceptions import ImmuniException
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +48,7 @@ def after_log() -> Callable[[RetryCallState], None]:
             url,
             retry_state.attempt_number,
             extra=dict(
-                exc=exc,
-                request_args=retry_state,
-                request_kwargs=retry_state.kwargs,
-                url=url
+                exc=exc, request_args=retry_state, request_kwargs=retry_state.kwargs, url=url
             ),
         )
 
