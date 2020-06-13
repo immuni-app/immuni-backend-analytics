@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
+from celery import Celery
 from freezegun import freeze_time
 
 from immuni_analytics.core import config
@@ -28,6 +29,7 @@ async def test_delete_old_data(
     model_logger_info: MagicMock,
     task_logger_info: MagicMock,
     generate_mongo_data: Callable[..., None],
+    setup_celery_app: Celery,
 ) -> None:
     with patch("immuni_analytics.core.config.DATA_RETENTION_DAYS", 15):
         reference_date = datetime(2020, 2, 20)
@@ -39,7 +41,7 @@ async def test_delete_old_data(
 
             assert ExposurePayload.objects.count() == 25
 
-            delete_old_data()
+            delete_old_data.delay()
 
             assert ExposurePayload.objects.count() == 10
         task_logger_info.assert_called_once_with("Data deletion started.")

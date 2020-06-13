@@ -13,6 +13,7 @@
 from asyncio import AbstractEventLoop
 from typing import Awaitable, Callable
 
+from celery import Celery
 from mongoengine import get_db
 from pytest import fixture
 from pytest_sanic.utils import TestClient
@@ -50,6 +51,14 @@ def client(
     sanic_custom_client: Callable[[Sanic], Awaitable[TestClient]],
 ) -> TestClient:
     return loop.run_until_complete(sanic_custom_client(sanic))
+
+
+@fixture(scope="function")
+def setup_celery_app(monitoring_setup: None) -> Celery:
+    from immuni_analytics.celery import celery_app
+
+    celery_app.conf.update(CELERY_ALWAYS_EAGER=True)
+    return celery_app
 
 
 @fixture(autouse=True)

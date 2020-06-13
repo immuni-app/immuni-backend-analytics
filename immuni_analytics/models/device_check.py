@@ -31,8 +31,13 @@ class DeviceCheckData:
     @property
     def last_update_month(self) -> date:
         """
-        Returns the date object of the last update
+        Generate the date object of the last update from the last_update_time
+
+        :return: a date object representing the last update
         """
+        if self.last_update_time is None:
+            raise ValueError("DeviceCheckData last_update_time is None")
+
         return date.fromisoformat(f"{self.last_update_time}-01")
 
     @property
