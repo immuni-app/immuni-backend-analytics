@@ -221,7 +221,7 @@ def test_validate_certificate_raises_if_wrong_issuer(
 ) -> None:
     header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
     certificates = _get_certificates(header)
-    with patch("immuni_analytics.helpers.safety_net._ISSUER_HOSTNAME", "wrong.issuer.com"):
+    with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_ISSUER_HOSTNAME", "wrong.issuer.com"):
         with raises(SafetyNetVerificationError):
             _validate_certificates(certificates)
     warning_logger.assert_called_once()

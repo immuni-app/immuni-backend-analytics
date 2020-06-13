@@ -30,9 +30,6 @@ from immuni_analytics.core import config
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.core.exceptions import ImmuniException
 
-_ISSUER_HOSTNAME = "attest.android.com"
-_PACKAGE_NAME = "it.ministerodellasalute.immuni"
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -173,7 +170,7 @@ def _validate_certificates(certificates: List[bytes]) -> None:
     """
     try:
         validator = CertificateValidator(certificates[0], certificates[1:])
-        validator.validate_tls(_ISSUER_HOSTNAME)
+        validator.validate_tls(config.SAFETY_NET_ISSUER_HOSTNAME)
     except certvalidator.errors.ValidationError as exc:
         _LOGGER.warning(
             "Could not validate the certificates chain.",
@@ -245,7 +242,7 @@ def _validate_payload(
     if not (
         lower_bound_skew <= payload["timestampMs"] <= upper_bound_skew
         and payload["nonce"] == _generate_nonce(operational_info, salt)
-        and payload["apkPackageName"] == _PACKAGE_NAME
+        and payload["apkPackageName"] == config.SAFETY_NET_PACKAGE_NAME
         and payload["apkCertificateDigestSha256"][0] == config.SAFETY_NET_APK_DIGEST
         and payload["basicIntegrity"] is True
         and payload["ctsProfileMatch"] is True

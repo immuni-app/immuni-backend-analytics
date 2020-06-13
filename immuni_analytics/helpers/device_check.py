@@ -30,9 +30,8 @@ from immuni_analytics.models.device_check import DeviceCheckData
 
 _LOGGER = logging.getLogger(__name__)
 
-_DEVICE_CHECK_URL = "https://api.development.devicecheck.apple.com/v1"
-_DEVICE_CHECK_GET_BITS_URL = f"{_DEVICE_CHECK_URL}/query_two_bits"
-_DEVICE_CHECK_SET_BITS_URL = f"{_DEVICE_CHECK_URL}/update_two_bits"
+_DEVICE_CHECK_GET_BITS_URL = f"{config.APPLE_DEVICE_CHECK_URL}/query_two_bits"
+_DEVICE_CHECK_SET_BITS_URL = f"{config.APPLE_DEVICE_CHECK_URL}/update_two_bits"
 
 
 class DeviceCheckApiError(Exception):
