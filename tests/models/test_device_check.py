@@ -32,22 +32,45 @@ def test_device_check_data_last_month(
 ) -> None:
     data = DeviceCheckData(bit0, bit1, last_update_time)
 
-    assert data.last_update_month == expected
+    assert data._last_update_month == expected
 
 
 def test_device_check_data_last_month_raises_if_none() -> None:
     data = DeviceCheckData(False, False, None)
 
     with raises(ValueError):
-        data.last_update_month
+        data._last_update_month
 
 
 @freeze_time("2020-06-10")
 @mark.parametrize(
     "bit0,bit1,last_update_time,expected",
     [
-        (False, False, "2020-08", False),
-        (False, False, "2020-06", False),
+        (False, False, "2020-06", True),
+        (False, False, "2020-04", False),
+        (False, False, "2020-05", False),
+        (False, False, None, False),
+        (True, False, "2020-04", False),
+        (False, True, "2020-04", False),
+        (True, True, "2020-04", False),
+        (True, False, "2020-06", True),
+        (False, True, "2020-06", True),
+        (True, True, "2020-06", True),
+        (False, False, "2020-07", True),
+    ],
+)
+def test_device_check_data_used_in_current_month(
+    bit0: bool, bit1: bool, last_update_time: Optional[str], expected: bool
+) -> None:
+    data = DeviceCheckData(bit0, bit1, last_update_time)
+
+    assert data.used_in_current_month is expected
+
+
+@freeze_time("2020-06-10")
+@mark.parametrize(
+    "bit0,bit1,last_update_time,expected",
+    [
         (False, False, "2020-04", True),
         (False, False, "2020-05", True),
         (False, False, None, True),
@@ -84,3 +107,25 @@ def test_device_check_data_is_authorized_config_compliant(
     data = DeviceCheckData(bit0, bit1, last_update_time)
 
     assert data.is_authorized_configuration_compliant is expected
+
+
+@freeze_time("2020-06-10")
+@mark.parametrize(
+    "bit0,bit1,last_update_time,expected",
+    [
+        (False, False, "2020-08", False),
+        (False, False, "2020-06", False),
+        (False, False, "2020-04", False),
+        (False, False, "2020-05", False),
+        (False, False, None, False),
+        (True, False, "2020-04", False),
+        (False, True, "2020-04", False),
+        (True, True, "2020-04", True),
+    ],
+)
+def test_device_check_data_is_blacklisted(
+    bit0: bool, bit1: bool, last_update_time: Optional[str], expected: bool
+) -> None:
+    data = DeviceCheckData(bit0, bit1, last_update_time)
+
+    assert data.is_blacklisted_configuration is expected

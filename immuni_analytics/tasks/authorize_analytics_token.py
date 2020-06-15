@@ -23,6 +23,7 @@ from immuni_analytics.helpers.redis import (
     get_authorized_tokens_redis_key_next_month,
 )
 from immuni_common.core.exceptions import ImmuniException
+from immuni_common.models.enums import Environment
 
 
 class DiscardAnalyticsTokenException(ImmuniException):
@@ -39,7 +40,7 @@ def authorize_analytics_token(analytics_token: str, device_token: str) -> None: 
 
 async def _authorize_analytics_token(analytics_token: str, device_token: str) -> None:
     try:
-        # TODO wait time between one step and the next one
+        # TODO wait time between one step and the next one is not bandit compliant
         await _first_step(device_token)
         await asyncio.sleep(random.uniform(1, config.CHECK_TIME))
         await _second_step(device_token)
@@ -59,8 +60,10 @@ async def _first_step(device_token: str) -> None:
     :raises: DiscardAnalyticsTokenException
     """
     device_check_data = await fetch_device_check_bits(device_token)
+    if config.ENV != Environment.RELEASE and device_check_data.used_in_current_month:
+        raise DiscardAnalyticsTokenException()
+
     if not device_check_data.is_default_configuration_compliant:
-        # TODO check if we always need to blacklist here
         await _blacklist_device(device_token)
 
 
