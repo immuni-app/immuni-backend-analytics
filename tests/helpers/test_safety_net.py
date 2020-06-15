@@ -13,7 +13,7 @@
 
 import base64
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
@@ -125,7 +125,7 @@ def _operational_info_from_post_body(post_body: Dict[str, Any]) -> OperationalIn
         bluetooth_active=post_body["bluetooth_active"],
         notification_permission=post_body["notification_permission"],
         exposure_notification=post_body["exposure_notification"],
-        last_risky_exposure_on=post_body["last_risky_exposure_on"],
+        last_risky_exposure_on=date.fromisoformat(post_body["last_risky_exposure_on"]),
     )
 
 

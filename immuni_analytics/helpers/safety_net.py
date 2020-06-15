@@ -214,7 +214,7 @@ def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
         f"{int(operational_info.bluetooth_active)}"
         f"{int(operational_info.notification_permission)}"
         f"{int(operational_info.exposure_notification)}"
-        f"{operational_info.last_risky_exposure_on}"
+        f"{operational_info.last_risky_exposure_on.isoformat()}"
         f"{salt}"
     )
 

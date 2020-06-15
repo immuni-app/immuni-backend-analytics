@@ -11,7 +11,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from mongoengine import BooleanField, DateTimeField, Document, StringField
+from mongoengine import BooleanField, DateField, DateTimeField, Document, StringField
 
 from immuni_common.models.enums import Platform
 from immuni_common.models.mongoengine.enum_field import EnumField
@@ -28,4 +28,4 @@ class OperationalInfo(Document):
     bluetooth_active = BooleanField(required=True)
     notification_permission = BooleanField(required=True)
     exposure_notification = BooleanField(required=True)
-    last_risky_exposure_on = DateTimeField(required=False)
+    last_risky_exposure_on = DateField(required=False)
