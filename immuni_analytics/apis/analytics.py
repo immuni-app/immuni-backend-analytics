@@ -130,7 +130,7 @@ async def post_operational_info(
                 notification_permission=notification_permission,
                 exposure_notification=exposure_notification,
                 last_risky_exposure_on=last_risky_exposure_on,
-            ).to_mongo()
+            ).to_dict()
         )
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
