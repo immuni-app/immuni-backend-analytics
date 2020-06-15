@@ -150,15 +150,6 @@ async def post_operational_info(
     HTTPStatus.NO_CONTENT.value, None, description="Well-formed request.",
 )
 @validate(
-    location=Location.HEADERS,
-    is_dummy=IntegerBoolField(
-        required=True,
-        data_key="Immuni-Dummy-Data",
-        allow_strings=True,
-        description="Whether the current request is a dummy request. Dummy requests are ignored.",
-    ),
-)
-@validate(
     location=Location.JSON,
     analytics_token=fields.String(
         required=True, validate=Regexp(rf"^[a-f0-9]{{{config.ANALYTICS_TOKEN_SIZE}}}$")
@@ -166,20 +157,16 @@ async def post_operational_info(
     device_token=Base64String(required=True),  # TODO: validate
 )
 async def authorize_token(
-    request: Request, is_dummy: bool, analytics_token: str, device_token: str
+    request: Request, analytics_token: str, device_token: str
 ) -> HTTPResponse:
     """
     Check if the device_token is genuine and, if so, authorize the analytics_token.
 
     :param request: the HTTP request.
-    :param is_dummy: whether the uploaded data is dummy or not.
     :param analytics_token: the analytics_token to authorize for the operational_info uploads.
     :param device_token: the device token to check against Apple DeviceCheck.
     :return: 201 if the token has been authorized already, 202 otherwise.
     """
-    if is_dummy:
-        return json_response(body=None, status=HTTPStatus.NO_CONTENT)
-
     if await managers.analytics_redis.sismember(
         get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token
     ) or await managers.analytics_redis.sismember(
