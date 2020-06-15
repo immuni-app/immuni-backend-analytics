@@ -36,7 +36,7 @@ def verify_safety_net_attestation(
     """
     asyncio.run(
         _verify_safety_net_attestation(
-            safety_net_attestation, salt, OperationalInfo(**operational_info)
+            safety_net_attestation, salt, OperationalInfo.from_dict(operational_info)
         )
     )
 
@@ -67,7 +67,7 @@ async def _verify_safety_net_attestation(
         if not operational_info.exposure_notification:
             operational_info.last_risky_exposure_on = None
 
-        store_operational_info.delay(operational_info.to_mongo())
+        store_operational_info.delay(operational_info.to_dict())
     else:
         _LOGGER.warning(
             "Found previously used salt.",

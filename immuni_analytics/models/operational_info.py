@@ -11,7 +11,11 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from mongoengine import BooleanField, DateField, DateTimeField, Document, StringField
+from __future__ import annotations
+from datetime import date
+from typing import Any, Dict
+
+from mongoengine import BooleanField, DateField, Document, StringField
 
 from immuni_common.models.enums import Platform
 from immuni_common.models.mongoengine.enum_field import EnumField
@@ -29,3 +33,38 @@ class OperationalInfo(Document):
     notification_permission = BooleanField(required=True)
     exposure_notification = BooleanField(required=True)
     last_risky_exposure_on = DateField(required=False)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the mongo document into a serializable dictionary.
+
+        :return: a dictionary representing the OperationalInfo document.
+        """
+        return dict(
+            platform=self.platform.value,
+            province=self.province,
+            exposure_permission=self.exposure_permission,
+            bluetooth_active=self.bluetooth_active,
+            notification_permission=self.notification_permission,
+            exposure_notification=self.exposure_notification,
+            last_risky_exposure_on=self.last_risky_exposure_on.isoformat() if self.last_risky_exposure_on else None
+        )
+
+    @staticmethod
+    def from_dict(value: Dict[str, Any]) -> OperationalInfo:
+        """
+        Convert a dictionary into an OperationalInfo document.
+
+        :param value:a dictionary representing the OperationalInfo document.
+        :return: an OperationalInfo document generated from the given dictionary.
+        """
+        return OperationalInfo(
+            platform=Platform(value["platform"]),
+            province=value["province"],
+            exposure_permission=value["exposure_permission"],
+            bluetooth_active=value["bluetooth_active"],
+            notification_permission=value["notification_permission"],
+            exposure_notification=value["exposure_notification"],
+            last_risky_exposure_on=date.fromisoformat(value["last_risky_exposure_on"]) if value.get("last_risky_exposure_on") else None,
+        )
+

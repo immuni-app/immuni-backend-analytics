@@ -263,6 +263,6 @@ async def post_android_operational_info(
         last_risky_exposure_on=last_risky_exposure_on,
     )
 
-    verify_safety_net_attestation.delay(signed_attestation, salt, operational_info.to_mongo())
+    verify_safety_net_attestation.delay(signed_attestation, salt, operational_info.to_dict())
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)

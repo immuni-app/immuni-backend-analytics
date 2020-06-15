@@ -18,9 +18,13 @@ from immuni_analytics.models.operational_info import OperationalInfo
 
 
 @celery_app.task()
-def store_operational_info(operational_info_dict: Dict[str, Any]) -> None:
+def store_operational_info(operational_info: Dict[str, Any]) -> None:
     """
     Store the operational information in the database. This can only happen twice a month for each
     analytics token.
+
+    :param operational_info: a dictionary containing the operational information
     """
-    OperationalInfo(**operational_info_dict).save()
+    OperationalInfo.from_dict(operational_info).save()
+
+
