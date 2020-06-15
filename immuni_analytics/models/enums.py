@@ -14,10 +14,11 @@
 from immuni_common.models.enums import EnvarEnum
 
 
-class AnalyticsQueue(EnvarEnum):
+class CeleryAppName(EnvarEnum):
     """
-    Enumeration of the possible celery queues for the analytics service.
+    Enumeration of the possible celery app names for the analytics service.
     """
 
-    WITHOUT_MONGO = "without_mongo"
-    WITH_MONGO = "with_mongo"
+    AUTHORIZATION = "authorization"
+    OPERATIONAL_INFO = "operational_info"
+    EXPOSURE_PAYLOAD = "exposure_payload"

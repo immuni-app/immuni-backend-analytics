@@ -10,3 +10,22 @@
 #    GNU Affero General Public License for more details.
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+import logging
+from datetime import datetime, timedelta
+
+from immuni_analytics.celery.exposure_payload.app import celery_app
+from immuni_analytics.core import config
+from immuni_analytics.models.exposure_data import ExposurePayload
+
+_LOGGER = logging.getLogger(__name__)
+
+
+@celery_app.task()
+def delete_old_exposure_payloads() -> None:
+    """
+    Deletes all ExposurePayload objects older than the retention days.
+    """
+    _LOGGER.info("Data deletion started.",)
+    reference_date = datetime.utcnow() - timedelta(days=config.DATA_RETENTION_DAYS)
+    ExposurePayload.delete_older_than(reference_date)
