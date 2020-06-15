@@ -60,7 +60,7 @@ async def _first_step(device_token: str) -> None:
     :raises: DiscardAnalyticsTokenException
     """
     device_check_data = await fetch_device_check_bits(device_token)
-    if config.ENV != Environment.RELEASE and device_check_data.used_in_current_month:
+    if config.ENV == Environment.RELEASE and device_check_data.used_in_current_month:
         raise DiscardAnalyticsTokenException()
 
     if not device_check_data.is_default_configuration_compliant:

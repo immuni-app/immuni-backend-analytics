@@ -45,7 +45,10 @@ APPLE_CERTIFICATE_KEY: str = config(
     "APPLE_CERTIFICATE_KEY", cast=load_certificate("APPLE_CERTIFICATE_KEY"), default=""
 )
 APPLE_DEVICE_CHECK_URL: str = config(
-    "APPLE__DEVICE_CHECK_URL", default="https://api.development.devicecheck.apple.com/v1"
+    "APPLE_DEVICE_CHECK_URL",
+    default="https://api.devicecheck.apple.com/v1"
+    if ENV == Environment.RELEASE
+    else "https://api.development.devicecheck.apple.com/v1",
 )
 APPLE_KEY_ID: str = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
