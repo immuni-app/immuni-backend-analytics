@@ -252,8 +252,10 @@ def _validate_payload(
             "The jws payload did not pass the validation check.",
             extra=dict(
                 payload=payload,
+                salt=salt,
                 lower_bound_skew=lower_bound_skew,
                 upper_bound_skew=upper_bound_skew,
+                generated_nonce=_generate_nonce(operational_info, salt),
             ),
         )
         raise SafetyNetVerificationError()

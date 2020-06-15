@@ -12,6 +12,7 @@
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 import random
 
 from immuni_analytics.celery.authorization.app import celery_app
@@ -24,6 +25,8 @@ from immuni_analytics.helpers.redis import (
 )
 from immuni_common.core.exceptions import ImmuniException
 from immuni_common.models.enums import Environment
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class DiscardAnalyticsTokenException(ImmuniException):
@@ -61,9 +64,27 @@ async def _first_step(device_token: str) -> None:
     """
     device_check_data = await fetch_device_check_bits(device_token)
     if config.ENV == Environment.RELEASE and device_check_data.used_in_current_month:
+        _LOGGER.warning(
+            "Found token already used in current month",
+            extra=dict(
+                env=config.ENV.value,
+                bit0=device_check_data.bit0,
+                bit1=device_check_data.bit1,
+                last_update_time=device_check_data.last_update_time,
+            ),
+        )
         raise DiscardAnalyticsTokenException()
 
     if not device_check_data.is_default_configuration_compliant:
+        _LOGGER.warning(
+            "Found token not default configuration compliant in first step.",
+            extra=dict(
+                env=config.ENV.value,
+                bit0=device_check_data.bit0,
+                bit1=device_check_data.bit1,
+                last_update_time=device_check_data.last_update_time,
+            ),
+        )
         await _blacklist_device(device_token)
 
 
@@ -77,6 +98,15 @@ async def _second_step(device_token: str) -> None:
     """
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_default_configuration_compliant:
+        _LOGGER.warning(
+            "Found token not default configuration compliant in second step.",
+            extra=dict(
+                env=config.ENV.value,
+                bit0=device_check_data.bit0,
+                bit1=device_check_data.bit1,
+                last_update_time=device_check_data.last_update_time,
+            ),
+        )
         await _blacklist_device(device_token)
 
     await set_device_check_bits(device_token, bit0=True, bit1=False)
@@ -92,6 +122,15 @@ async def _third_step(device_token: str) -> None:
     """
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_authorized_configuration_compliant:
+        _LOGGER.warning(
+            "Found token not authorization configuration compliant in third step.",
+            extra=dict(
+                env=config.ENV.value,
+                bit0=device_check_data.bit0,
+                bit1=device_check_data.bit1,
+                last_update_time=device_check_data.last_update_time,
+            ),
+        )
         await _blacklist_device(device_token)
 
     await set_device_check_bits(device_token, bit0=False, bit1=False)
