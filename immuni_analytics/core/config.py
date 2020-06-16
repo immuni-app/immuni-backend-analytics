@@ -63,8 +63,8 @@ APPLE_DEVICE_CHECK_URL: str = config(
 )
 APPLE_KEY_ID: str = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
-
 DATA_RETENTION_DAYS: int = config("DATA_RETENTION_DAYS", cast=int, default=30)
+DEVICE_TOKEN_MAX_LENGTH: int = config("DEVICE_TOKEN_MAX_LENGTH", cast=int, default=10_000)
 MAX_INGESTED_ELEMENTS: int = config("MAX_INGESTED_ELEMENTS", cast=int, default=100)
 CHECK_TIME: int = config("CHECK_TIME", cast=int, default=7)
 DELETE_OLD_DATA_PERIODICITY: str = config(
@@ -83,4 +83,8 @@ SAFETY_NET_APK_DIGEST: str = config("SAFETY_NET_APK_DIGEST", default="")
 SAFETY_NET_ISSUER_HOSTNAME: str = config("SAFETY_NET_ISSUER_HOSTNAME", default="attest.android.com")
 SAFETY_NET_PACKAGE_NAME: str = config(
     "SAFETY_NET_PACKAGE_NAME", default="it.ministerodellasalute.immuni"
+)
+SALT_LENGTH: int = config("SALT_LENGTH", cast=int, default=24)
+SIGNED_ATTESTATION_MAX_LENGTH: int = config(
+    "SIGNED_ATTESTATION_MAX_LENGTH", cast=int, default=10_000
 )

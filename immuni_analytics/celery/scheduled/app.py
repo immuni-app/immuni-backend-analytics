@@ -56,7 +56,7 @@ def _get_schedules() -> Tuple[Schedule, ...]:
 
 # pylint: disable=duplicate-code
 @worker_process_init.connect
-def worker_process_init_listener_exposure_payload(**kwargs: Any) -> None:
+def worker_process_init_listener_exposure_payload(**kwargs: Any) -> None:  # pragma: no cover
     """
     Listener on worker initialization to properly initialize the project's managers.
 
@@ -67,7 +67,7 @@ def worker_process_init_listener_exposure_payload(**kwargs: Any) -> None:
 
 
 @worker_process_shutdown.connect
-def worker_process_shutdown_listener_exposure_payload(**kwargs: Any) -> None:
+def worker_process_shutdown_listener_exposure_payload(**kwargs: Any) -> None:  # pragma: no cover
     """
     Listener on worker shutdown to properly cleanup the project's managers.
 

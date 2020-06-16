@@ -11,7 +11,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime
+from datetime import date, datetime
 from http import HTTPStatus
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
@@ -59,7 +59,7 @@ async def test_google_operational_info_with_exposure(
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 1
     assert (
-        OperationalInfo.objects.exclude("id").first().to_mongo()
+        OperationalInfo.objects.first().to_dict()
         == OperationalInfo(
             platform=Platform.ANDROID,
             province=safety_net_post_body_with_exposure["province"],
@@ -67,8 +67,10 @@ async def test_google_operational_info_with_exposure(
             bluetooth_active=safety_net_post_body_with_exposure["bluetooth_active"],
             notification_permission=safety_net_post_body_with_exposure["notification_permission"],
             exposure_notification=safety_net_post_body_with_exposure["exposure_notification"],
-            last_risky_exposure_on=safety_net_post_body_with_exposure["last_risky_exposure_on"],
-        ).to_mongo()
+            last_risky_exposure_on=date.fromisoformat(
+                safety_net_post_body_with_exposure["last_risky_exposure_on"]
+            ),
+        ).to_dict()
     )
     assert (
         await managers.analytics_redis.get(
@@ -103,7 +105,7 @@ async def test_google_operational_info_without_exposure(
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 1
     assert (
-        OperationalInfo.objects.exclude("id").first().to_mongo()
+        OperationalInfo.objects.first().to_dict()
         == OperationalInfo(
             platform=Platform.ANDROID,
             province=safety_net_post_body_without_exposure["province"],
@@ -114,7 +116,7 @@ async def test_google_operational_info_without_exposure(
             ],
             exposure_notification=safety_net_post_body_without_exposure["exposure_notification"],
             last_risky_exposure_on=None,
-        ).to_mongo()
+        ).to_dict()
     )
     assert (
         await managers.analytics_redis.get(

@@ -16,7 +16,7 @@ from datetime import date
 from http import HTTPStatus
 
 from marshmallow import fields
-from marshmallow.validate import Regexp
+from marshmallow.validate import Length, Regexp
 from sanic import Blueprint
 from sanic.request import Request
 from sanic.response import HTTPResponse
@@ -135,7 +135,7 @@ async def post_operational_info(  # pylint: disable=too-many-arguments
                 bluetooth_active=bluetooth_active,
                 notification_permission=notification_permission,
                 exposure_notification=exposure_notification,
-                last_risky_exposure_on=last_risky_exposure_on,
+                last_risky_exposure_on=last_risky_exposure_on if exposure_notification else None,
             ).to_dict()
         )
 
@@ -160,7 +160,7 @@ async def post_operational_info(  # pylint: disable=too-many-arguments
     analytics_token=fields.String(
         required=True, validate=Regexp(rf"^[a-f0-9]{{{config.ANALYTICS_TOKEN_SIZE}}}$")
     ),
-    device_token=Base64String(required=True),  # TODO: validate
+    device_token=Base64String(required=True, max_encoded_length=config.DEVICE_TOKEN_MAX_LENGTH),
 )
 async def authorize_token(
     request: Request, analytics_token: str, device_token: str
@@ -215,8 +215,12 @@ async def authorize_token(
     notification_permission=IntegerBoolField(required=True),
     exposure_notification=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
-    salt=Base64String(required=True),
-    signed_attestation=fields.String(required=True),
+    salt=Base64String(
+        required=True, min_encoded_length=config.SALT_LENGTH, max_encoded_length=config.SALT_LENGTH
+    ),
+    signed_attestation=fields.String(
+        required=True, validate=Length(max=config.SIGNED_ATTESTATION_MAX_LENGTH)
+    ),
 )
 async def post_android_operational_info(  # pylint: disable=too-many-arguments
     request: Request,
