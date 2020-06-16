@@ -32,7 +32,7 @@ services:
     build:
       <<: *common-build
       target: api
-  beat:
+  beat_exposure_payload:
     <<: *common-service
     image: beat
     build:
