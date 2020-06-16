@@ -62,7 +62,7 @@ async def _verify_safety_net_attestation(
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.
     :param operational_info: the device operational information.
-    :param last_risky_exposure_on: the last risky exposure date in isoformat used to generate the nonce.
+    :param last_risky_exposure_on: the last risky exposure isoformat date.
     """
     try:
         safety_net.verify_attestation(

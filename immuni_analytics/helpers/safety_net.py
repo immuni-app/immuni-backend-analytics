@@ -208,7 +208,7 @@ def _generate_nonce(
 
     :param operational_info: the operational information related to the SafetyNet payload.
     :param salt: the salt used in the SafetyNet payload.
-    :param last_risky_exposure_on: the last risky exposure date in isoformat.
+    :param last_risky_exposure_on: the last risky exposure isoformat date.
     :return: a base64 encoded SHA256 digest representing the nonce.
     """
     nonce = (
@@ -236,7 +236,7 @@ def _validate_payload(
     :param payload: the jws decoded payload.
     :param operational_info: the device operational information.
     :param salt: the salt sent in the request.
-    :param last_risky_exposure_on: the last risky exposure date in isoformat used to generate the nonce.
+    :param last_risky_exposure_on: the last risky exposure isoformat date.
     :raises: SafetyNetVerificationError if at least one requirement is not met.
     """
     lower_bound_skew = (
@@ -280,7 +280,7 @@ def verify_attestation(
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.
     :param operational_info: the device operational information.
-    :param last_risky_exposure_on: the last risky exposure date in isoformat used to generate the nonce.
+    :param last_risky_exposure_on: the last risky exposure isoformat date.
     :raises: SafetyNetVerificationError if any of the retrieval or validation steps fail.
     """
     header = _get_jws_header(safety_net_attestation)
