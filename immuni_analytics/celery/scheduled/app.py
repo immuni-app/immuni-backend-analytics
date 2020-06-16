@@ -36,9 +36,7 @@ def _get_schedules() -> Tuple[Schedule, ...]:
     from immuni_analytics.celery.scheduled.tasks.store_exposure_payloads import (
         store_exposure_payloads,
     )
-    from immuni_analytics.celery.scheduled.tasks.delete_old_data import (
-        delete_old_data,
-    )
+    from immuni_analytics.celery.scheduled.tasks.delete_old_data import delete_old_data
 
     # TODO: move to common
     def to_crontab_args(crontab_entry: str) -> List[str]:

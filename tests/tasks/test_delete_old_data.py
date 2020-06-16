@@ -18,9 +18,7 @@ from unittest.mock import MagicMock, patch
 from celery import Celery
 from freezegun import freeze_time
 
-from immuni_analytics.celery.scheduled.tasks.delete_old_data import (
-    delete_old_data,
-)
+from immuni_analytics.celery.scheduled.tasks.delete_old_data import delete_old_data
 from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
 

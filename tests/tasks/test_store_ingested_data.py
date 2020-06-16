@@ -17,9 +17,7 @@ from unittest.mock import MagicMock, call, patch
 
 from pytest import mark
 
-from immuni_analytics.celery.scheduled.tasks.store_exposure_payloads import (
-    _store_exposure_payloads,
-)
+from immuni_analytics.celery.scheduled.tasks.store_exposure_payloads import _store_exposure_payloads
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.models.exposure_data import ExposurePayload
