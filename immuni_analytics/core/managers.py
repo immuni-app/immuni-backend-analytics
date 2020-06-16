@@ -48,9 +48,13 @@ class Managers(BaseManagers):
             raise RuntimeError("Attempting to use Analytics redis before initialization")
         return self._analytics_redis
 
-    async def initialize(self, initialize_mongo: bool = False) -> None:
+    async def initialize(  # pylint: disable=arguments-differ
+        self, initialize_mongo: bool = False
+    ) -> None:
         """
         Initialize managers on demand.
+
+        :param initialize_mongo: whether to initialize the MongoDB manager.
         """
         await super().initialize()
         if initialize_mongo:
