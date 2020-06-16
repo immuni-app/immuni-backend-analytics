@@ -53,6 +53,7 @@ async def test_google_operational_info_with_exposure(
                 safety_net_post_body_with_exposure["signed_attestation"],
                 safety_net_post_body_with_exposure["salt"],
                 _operational_info_from_post_body(safety_net_post_body_with_exposure),
+                safety_net_post_body_with_exposure["last_risky_exposure_on"],
             )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
@@ -96,6 +97,7 @@ async def test_google_operational_info_without_exposure(
                 safety_net_post_body_without_exposure["signed_attestation"],
                 safety_net_post_body_without_exposure["salt"],
                 _operational_info_from_post_body(safety_net_post_body_without_exposure),
+                safety_net_post_body_without_exposure["last_risky_exposure_on"],
             )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
@@ -165,6 +167,7 @@ async def test_google_operational_info_used_salt(
                 safety_net_post_body_with_exposure["signed_attestation"],
                 safety_net_post_body_with_exposure["salt"],
                 _operational_info_from_post_body(safety_net_post_body_with_exposure),
+                safety_net_post_body_with_exposure["last_risky_exposure_on"],
             )
 
     assert response.status == HTTPStatus.NO_CONTENT.value

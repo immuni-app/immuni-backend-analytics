@@ -266,9 +266,11 @@ async def post_android_operational_info(
         bluetooth_active=bluetooth_active,
         notification_permission=notification_permission,
         exposure_notification=exposure_notification,
-        last_risky_exposure_on=last_risky_exposure_on,
+        last_risky_exposure_on=last_risky_exposure_on if exposure_notification else None,
     )
 
-    verify_safety_net_attestation.delay(signed_attestation, salt, operational_info.to_dict())
+    verify_safety_net_attestation.delay(
+        signed_attestation, salt, operational_info.to_dict(), last_risky_exposure_on.isoformat()
+    )
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)

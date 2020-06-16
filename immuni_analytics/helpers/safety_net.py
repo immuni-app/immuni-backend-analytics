@@ -199,13 +199,16 @@ def _verify_signature(jws_token: str, certificates: List[bytes]) -> None:
         raise SafetyNetVerificationError()
 
 
-def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
+def _generate_nonce(
+    operational_info: OperationalInfo, salt: str, last_risky_exposure_on: str
+) -> str:
     """
     Generate the payload nonce from the operational information and the salt.
     This digest must be the same specified in the client implementation.
 
     :param operational_info: the operational information related to the SafetyNet payload.
     :param salt: the salt used in the SafetyNet payload.
+    :param last_risky_exposure_on: the last risky exposure date in isoformat.
     :return: a base64 encoded SHA256 digest representing the nonce.
     """
     nonce = (
@@ -214,7 +217,7 @@ def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
         f"{int(operational_info.bluetooth_active)}"
         f"{int(operational_info.notification_permission)}"
         f"{int(operational_info.exposure_notification)}"
-        f"{operational_info.last_risky_exposure_on.isoformat()}"
+        f"{last_risky_exposure_on}"
         f"{salt}"
     )
 
@@ -222,7 +225,10 @@ def _generate_nonce(operational_info: OperationalInfo, salt: str) -> str:
 
 
 def _validate_payload(
-    payload: Dict[str, Any], operational_info: OperationalInfo, salt: str
+    payload: Dict[str, Any],
+    operational_info: OperationalInfo,
+    salt: str,
+    last_risky_exposure_on: str,
 ) -> None:
     """
     Validate the jws payload.
@@ -230,6 +236,7 @@ def _validate_payload(
     :param payload: the jws decoded payload.
     :param operational_info: the device operational information.
     :param salt: the salt sent in the request.
+    :param last_risky_exposure_on: the last risky exposure date in isoformat used to generate the nonce.
     :raises: SafetyNetVerificationError if at least one requirement is not met.
     """
     lower_bound_skew = (
@@ -241,7 +248,7 @@ def _validate_payload(
 
     if not (
         lower_bound_skew <= payload["timestampMs"] <= upper_bound_skew
-        and payload["nonce"] == _generate_nonce(operational_info, salt)
+        and payload["nonce"] == _generate_nonce(operational_info, salt, last_risky_exposure_on)
         and payload["apkPackageName"] == config.SAFETY_NET_PACKAGE_NAME
         and payload["apkCertificateDigestSha256"][0] == config.SAFETY_NET_APK_DIGEST
         and payload["basicIntegrity"] is True
@@ -255,14 +262,17 @@ def _validate_payload(
                 salt=salt,
                 lower_bound_skew=lower_bound_skew,
                 upper_bound_skew=upper_bound_skew,
-                generated_nonce=_generate_nonce(operational_info, salt),
+                generated_nonce=_generate_nonce(operational_info, salt, last_risky_exposure_on),
             ),
         )
         raise SafetyNetVerificationError()
 
 
 def verify_attestation(
-    safety_net_attestation: str, salt: str, operational_info: OperationalInfo
+    safety_net_attestation: str,
+    salt: str,
+    operational_info: OperationalInfo,
+    last_risky_exposure_on: str,
 ) -> None:
     """
     Verify that the safety_net_payload is valid, signed by Google and formatted as expected.
@@ -270,6 +280,7 @@ def verify_attestation(
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.
     :param operational_info: the device operational information.
+    :param last_risky_exposure_on: the last risky exposure date in isoformat used to generate the nonce.
     :raises: SafetyNetVerificationError if any of the retrieval or validation steps fail.
     """
     header = _get_jws_header(safety_net_attestation)
@@ -277,4 +288,4 @@ def verify_attestation(
     _validate_certificates(certificates)
     _verify_signature(safety_net_attestation, certificates)
     payload = _get_jws_payload(safety_net_attestation)
-    _validate_payload(payload, operational_info, salt)
+    _validate_payload(payload, operational_info, salt, last_risky_exposure_on)

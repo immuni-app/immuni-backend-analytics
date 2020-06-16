@@ -31,20 +31,29 @@ _LOGGER = logging.getLogger(__name__)
 
 @celery_app.task()
 def verify_safety_net_attestation(
-    safety_net_attestation: str, salt: str, operational_info: Dict[str, Any]
+    safety_net_attestation: str,
+    salt: str,
+    operational_info: Dict[str, Any],
+    last_risky_exposure_on: str,
 ) -> None:  # pragma: no cover
     """
      Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
     asyncio.run(
         _verify_safety_net_attestation(
-            safety_net_attestation, salt, OperationalInfo.from_dict(operational_info)
+            safety_net_attestation,
+            salt,
+            OperationalInfo.from_dict(operational_info),
+            last_risky_exposure_on,
         )
     )
 
 
 async def _verify_safety_net_attestation(
-    safety_net_attestation: str, salt: str, operational_info: OperationalInfo
+    safety_net_attestation: str,
+    salt: str,
+    operational_info: OperationalInfo,
+    last_risky_exposure_on: str,
 ) -> None:
     """
     Verify that the safety_net_attestation is genuine. Prevent race conditions and save
@@ -53,9 +62,12 @@ async def _verify_safety_net_attestation(
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.
     :param operational_info: the device operational information.
+    :param last_risky_exposure_on: the last risky exposure date in isoformat used to generate the nonce.
     """
     try:
-        safety_net.verify_attestation(safety_net_attestation, salt, operational_info)
+        safety_net.verify_attestation(
+            safety_net_attestation, salt, operational_info, last_risky_exposure_on
+        )
     except SafetyNetVerificationError:
         return
 
@@ -66,9 +78,6 @@ async def _verify_safety_net_attestation(
         expire=config.SAFETY_NET_MAX_SKEW_MINUTES * 60,
         exist=StringCommandsMixin.SET_IF_NOT_EXIST,
     ):
-        if not operational_info.exposure_notification:
-            operational_info.last_risky_exposure_on = None
-
         store_operational_info.delay(operational_info.to_dict())
     else:
         _LOGGER.warning(

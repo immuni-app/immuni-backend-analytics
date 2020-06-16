@@ -125,7 +125,9 @@ def _operational_info_from_post_body(post_body: Dict[str, Any]) -> OperationalIn
         bluetooth_active=post_body["bluetooth_active"],
         notification_permission=post_body["notification_permission"],
         exposure_notification=post_body["exposure_notification"],
-        last_risky_exposure_on=date.fromisoformat(post_body["last_risky_exposure_on"]),
+        last_risky_exposure_on=None
+        if not post_body["exposure_notification"]
+        else date.fromisoformat(post_body["last_risky_exposure_on"]),
     )
 
 
@@ -137,6 +139,7 @@ def test_verify(safety_net_post_body_with_exposure: Dict[str, Any]) -> None:
             safety_net_post_body_with_exposure["signed_attestation"],
             safety_net_post_body_with_exposure["salt"],
             operational_info,
+            safety_net_post_body_with_exposure["last_risky_exposure_on"],
         )
 
 
@@ -154,6 +157,7 @@ def test_verify_raises_if_too_skewed(
             safety_net_post_body_with_exposure["signed_attestation"],
             safety_net_post_body_with_exposure["salt"],
             operational_info,
+            safety_net_post_body_with_exposure["last_risky_exposure_on"],
         )
 
     warning_logger.assert_called_once()
@@ -174,6 +178,7 @@ def test_verify_raises_if_nonce_changes(
             safety_net_post_body_with_exposure["signed_attestation"],
             safety_net_post_body_with_exposure["salt"],
             operational_info,
+            safety_net_post_body_with_exposure["last_risky_exposure_on"],
         )
 
     warning_logger.assert_called_once()
