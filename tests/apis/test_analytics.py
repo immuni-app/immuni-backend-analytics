@@ -20,10 +20,12 @@ from freezegun import freeze_time
 from pytest import fixture, mark
 from pytest_sanic.utils import TestClient
 
+from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation import (
+    _verify_safety_net_attestation,
+)
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.safety_net import get_redis_key
 from immuni_analytics.models.operational_info import OperationalInfo
-from immuni_analytics.tasks.verify_safety_net_attestation import _verify_safety_net_attestation
 from immuni_common.models.enums import Platform
 from tests.fixtures.safety_net import POST_BODY_WITH_EXPOSURE, POST_TIMESTAMP, TEST_APK_DIGEST
 from tests.helpers.test_safety_net import _operational_info_from_post_body

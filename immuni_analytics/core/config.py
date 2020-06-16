@@ -15,7 +15,7 @@ import logging
 
 from decouple import config
 
-from immuni_analytics.models.enums import AnalyticsQueue
+from immuni_analytics.models.enums import CeleryAppName
 from immuni_common.core.config import ENV
 from immuni_common.helpers.config import load_certificate, validate_crontab
 from immuni_common.models.enums import Environment
@@ -35,9 +35,20 @@ ANALYTICS_ERRORS_QUEUE_KEY: str = config(
     "ANALYTICS_ERRORS_QUEUE_KEY", default="errors_exposure_data"
 )
 
-CELERY_BROKER_REDIS_URL: str = config("CELERY_BROKER_REDIS_URL", default="redis://localhost:6379/0")
 CELERY_ALWAYS_EAGER: bool = config(
     "CELERY_ALWAYS_EAGER", cast=bool, default=ENV == Environment.TESTING
+)
+CELERY_BROKER_REDIS_URL_AUTHORIZATION: str = config(
+    "CELERY_BROKER_REDIS_URL_AUTHORIZATION", default="redis://localhost:6379/0"
+)
+CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD: str = config(
+    "CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD", default="redis://localhost:6379/0"
+)
+CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO: str = config(
+    "CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO", default="redis://localhost:6379/0"
+)
+CELERY_APP_NAME: CeleryAppName = config(
+    "CELERY_APP_NAME", cast=CeleryAppName.from_env_var, default=CeleryAppName.OPERATIONAL_INFO
 )
 
 ANALYTICS_TOKEN_SIZE: int = config("ANALYTICS_TOKEN_SIZE", cast=int, default=128)
@@ -53,9 +64,6 @@ APPLE_DEVICE_CHECK_URL: str = config(
 APPLE_KEY_ID: str = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
 
-CELERY_WORKER_QUEUE: AnalyticsQueue = config(
-    "CELERY_WORKER_QUEUE", cast=AnalyticsQueue.from_env_var, default=AnalyticsQueue.WITH_MONGO
-)
 DATA_RETENTION_DAYS: int = config("DATA_RETENTION_DAYS", cast=int, default=30)
 MAX_INGESTED_ELEMENTS: int = config("MAX_INGESTED_ELEMENTS", cast=int, default=100)
 CHECK_TIME: int = config("CHECK_TIME", cast=int, default=7)

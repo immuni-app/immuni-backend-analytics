@@ -16,12 +16,11 @@ case "$1" in
             --workers=${API_WORKERS} \
             --worker-class=uvicorn.workers.UvicornWorker ;;
     beat) poetry run celery beat \
-            --app=immuni_analytics.celery.celery_app \
+            --app=immuni_analytics.celery.exposure_payload.app.celery_app \
             --loglevel=debug ;;
     worker) poetry run celery worker \
-            --app=immuni_analytics.celery.celery_app \
+            --app=immuni_analytics.celery.${CELERY_APP_NAME}.app.celery_app \
             --concurrency=${CELERY_WORKER_CONCURRENCY} \
-            --queues=${CELERY_WORKER_QUEUE} \
             --task-events \
             --without-gossip \
             --without-mingle \

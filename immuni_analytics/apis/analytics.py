@@ -22,6 +22,15 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from sanic_openapi import doc
 
+from immuni_analytics.celery.authorization.tasks.authorize_analytics_token import (
+    authorize_analytics_token,
+)
+from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation import (
+    verify_safety_net_attestation,
+)
+from immuni_analytics.celery.operational_info.tasks.store_operational_info import (
+    store_operational_info,
+)
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
@@ -32,9 +41,6 @@ from immuni_analytics.models.swagger import (
     AuthorizationBody,
     GoogleOperationalInfo,
 )
-from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
-from immuni_analytics.tasks.store_operational_info import store_operational_info
-from immuni_analytics.tasks.verify_safety_net_attestation import verify_safety_net_attestation
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import json_response, validate
 from immuni_common.helpers.swagger import doc_exception

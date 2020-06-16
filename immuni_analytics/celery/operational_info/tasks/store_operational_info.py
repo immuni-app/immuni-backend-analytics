@@ -13,7 +13,7 @@
 
 from typing import Any, Dict
 
-from immuni_analytics.celery import celery_app
+from immuni_analytics.celery.operational_info.app import celery_app
 from immuni_analytics.models.operational_info import OperationalInfo
 
 

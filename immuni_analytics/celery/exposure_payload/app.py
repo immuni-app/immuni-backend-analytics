@@ -13,16 +13,15 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 from celery.schedules import crontab
 from celery.signals import worker_process_init, worker_process_shutdown
 from croniter import croniter
 
-from immuni_analytics import tasks
+from immuni_analytics.celery.exposure_payload import tasks
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
-from immuni_analytics.models.enums import AnalyticsQueue
 from immuni_common.celery import CeleryApp, Schedule
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,8 +36,12 @@ def _get_schedules() -> Tuple[Schedule, ...]:
     :return: the tuple of tasks schedules.
     """
 
-    from immuni_analytics.tasks.store_ingested_data import store_ingested_data
-    from immuni_analytics.tasks.delete_old_data import delete_old_data
+    from immuni_analytics.celery.exposure_payload.tasks.store_ingested_data import (
+        store_exposure_payloads,
+    )
+    from immuni_analytics.celery.exposure_payload.tasks.delete_old_exposure_payloads import (
+        delete_old_exposure_payloads,
+    )
 
     # TODO: move to common
     def to_crontab_args(crontab_entry: str) -> List[str]:
@@ -46,36 +49,14 @@ def _get_schedules() -> Tuple[Schedule, ...]:
 
     return (
         Schedule(
-            task=store_ingested_data,
+            task=store_exposure_payloads,
             when=crontab(*to_crontab_args(config.STORE_INGESTED_DATA_PERIODICITY)),
         ),
         Schedule(
-            task=delete_old_data,
+            task=delete_old_exposure_payloads,
             when=crontab(*to_crontab_args(config.DELETE_OLD_DATA_PERIODICITY)),
         ),
     )
-
-
-# pylint: disable=import-outside-toplevel, cyclic-import, no-member
-def _get_routes() -> Dict[str, Dict[str, str]]:
-    """
-    Get static routing of tasks.
-    # NOTE: Tasks need to be imported locally, so as to avoid cyclic dependencies.
-    :return: the dictionary with the queue associated to every task.
-    """
-    from immuni_analytics.tasks.authorize_analytics_token import authorize_analytics_token
-    from immuni_analytics.tasks.delete_old_data import delete_old_data
-    from immuni_analytics.tasks.store_ingested_data import store_ingested_data
-    from immuni_analytics.tasks.store_operational_info import store_operational_info
-    from immuni_analytics.tasks.verify_safety_net_attestation import verify_safety_net_attestation
-
-    return {
-        authorize_analytics_token.name: dict(queue=AnalyticsQueue.WITHOUT_MONGO.value),
-        verify_safety_net_attestation.name: dict(queue=AnalyticsQueue.WITHOUT_MONGO.value),
-        delete_old_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
-        store_ingested_data.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
-        store_operational_info.name: dict(queue=AnalyticsQueue.WITH_MONGO.value),
-    }
 
 
 @worker_process_init.connect
@@ -86,11 +67,7 @@ def worker_process_init_listener(**kwargs: Any) -> None:
     :param kwargs: the keyword arguments passed by Celery, ignored in this case.
     """
 
-    asyncio.run(
-        managers.initialize(
-            initialize_mongo=(config.CELERY_WORKER_QUEUE == AnalyticsQueue.WITH_MONGO)
-        )
-    )
+    asyncio.run(managers.initialize(initialize_mongo=True))
 
 
 @worker_process_shutdown.connect
@@ -104,10 +81,9 @@ def worker_process_shutdown_listener(**kwargs: Any) -> None:
 
 
 celery_app = CeleryApp(
-    service_dir_name="immuni_analytics",
-    broker_redis_url=config.CELERY_BROKER_REDIS_URL,
+    service_dir_name="immuni_analytics.celery.exposure_payload",
+    broker_redis_url=config.CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD,
     always_eager=config.CELERY_ALWAYS_EAGER,
     schedules_function=_get_schedules,
-    routes_function=_get_routes,
     tasks_module=tasks,
 )

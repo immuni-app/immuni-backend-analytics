@@ -4,7 +4,9 @@ x-common-environment: &common-environment
   ENV: development
   ANALYTICS_MONGO_URL: "mongodb://mongo:27017"
   ANALYTICS_BROKER_REDIS_URL: "redis://analytics_redis:6379/0"
-  CELERY_BROKER_REDIS_URL: "redis://celery_redis:6379/0"
+  CELERY_BROKER_REDIS_URL_AUTHORIZATION: "redis://celery_redis:6379/0"
+  CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD: "redis://celery_redis:6379/0"
+  CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO: "redis://celery_redis:6379/0"
 
 x-common-service: &common-service
   environment:
@@ -30,26 +32,35 @@ services:
     build:
       <<: *common-build
       target: api
-  beat:
+  beat_exposure_payload:
     <<: *common-service
     image: beat
     build:
       <<: *common-build
       target: beat
-  worker_mongo:
+  worker_autorization:
     <<: *common-service
     environment:
       <<: *common-environment
-      CELERY_WORKER_QUEUE: "with_mongo"
+      CELERY_APP_NAME: "authorization"
     image: worker
     build:
       <<: *common-build
       target: worker
-  worker_redis:
+  worker_exposure_payload:
     <<: *common-service
     environment:
       <<: *common-environment
-      CELERY_WORKER_QUEUE: "without_mongo"
+      CELERY_APP_NAME: "exposure_payload"
+    image: worker
+    build:
+      <<: *common-build
+      target: worker
+  worker_operational_info:
+    <<: *common-service
+    environment:
+      <<: *common-environment
+      CELERY_APP_NAME: "operational_info"
     image: worker
     build:
       <<: *common-build

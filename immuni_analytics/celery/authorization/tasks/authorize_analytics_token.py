@@ -14,7 +14,7 @@
 import asyncio
 import random
 
-from immuni_analytics.celery import celery_app
+from immuni_analytics.celery.authorization.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.device_check import fetch_device_check_bits, set_device_check_bits

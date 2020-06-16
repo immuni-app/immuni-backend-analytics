@@ -17,10 +17,12 @@ from unittest.mock import MagicMock, call, patch
 
 from pytest import mark
 
+from immuni_analytics.celery.exposure_payload.tasks.store_ingested_data import (
+    _store_exposure_payloads,
+)
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.models.exposure_data import ExposurePayload
-from immuni_analytics.tasks.store_ingested_data import _store_ingested_data
 
 
 @mark.parametrize(
@@ -45,7 +47,7 @@ async def test_ingest_data(
             )
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         ingested_data = min(n_elements, config.MAX_INGESTED_ELEMENTS)
 
@@ -83,7 +85,7 @@ async def test_json_error(
 
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 1
 
@@ -121,7 +123,7 @@ async def test_validation_error(
 
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 1
 
@@ -163,7 +165,7 @@ async def test_wrong_exposure_data_error(
 
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 0
 
@@ -201,7 +203,7 @@ async def test_empty_exposure_info_summary(
 
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 1
 
@@ -237,7 +239,7 @@ async def test_empty_exposure_info(
 
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 1
 
@@ -273,7 +275,7 @@ async def test_missing_symptoms_started_on(
 
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 1
 
@@ -311,7 +313,7 @@ async def test_wrong_symptoms_started_on(
 
         assert ExposurePayload.objects.count() == 0
 
-        await _store_ingested_data()
+        await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 0
         assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 1

@@ -19,7 +19,7 @@ from json import JSONDecodeError
 from marshmallow import ValidationError as MarshmallowValidationError
 from mongoengine import ValidationError as MongoengineValidationError
 
-from immuni_analytics.celery import celery_app
+from immuni_analytics.celery.exposure_payload.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.models.exposure_data import ExposurePayload
@@ -29,23 +29,23 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @celery_app.task()
-def store_ingested_data() -> None:  # pragma: no cover
+def store_exposure_payloads() -> None:  # pragma: no cover
     """
      Celery doesn't support async functions, so we wrap it around asyncio.run.
      """
-    asyncio.run(_store_ingested_data())
+    asyncio.run(_store_exposure_payloads())
 
 
 class InvalidFormatException(ImmuniException):
     """Raised when the ingested date format is invalid"""
 
 
-async def _store_ingested_data() -> None:
+async def _store_exposure_payloads() -> None:
     """
-    Retrieve up to a fixed number of ingested data and save it into mongo.
-    If something goes wrong push the data into the error queue.
+    Retrieve up to a fixed number of exposure payload data and save it into mongo.
+    If something goes wrong, push the data into the error queue.
     """
-    _LOGGER.info("Data ingestion started.",)
+    _LOGGER.info("Data ingestion started.")
     pipe = managers.analytics_redis.pipeline()
     pipe.lrange(config.ANALYTICS_QUEUE_KEY, 0, config.MAX_INGESTED_ELEMENTS - 1)
     pipe.ltrim(config.ANALYTICS_QUEUE_KEY, config.MAX_INGESTED_ELEMENTS, -1)
@@ -72,7 +72,7 @@ async def _store_ingested_data() -> None:
         ExposurePayload.objects.insert(exposure_data)
     if bad_format_data:
         _LOGGER.warning(
-            "Found ingested data with bad format", extra={"bad_format_data": len(bad_format_data)}
+            "Found ingested data with bad format.", extra={"bad_format_data": len(bad_format_data)}
         )
         managers.analytics_redis.rpush(config.ANALYTICS_ERRORS_QUEUE_KEY, *bad_format_data)
 
