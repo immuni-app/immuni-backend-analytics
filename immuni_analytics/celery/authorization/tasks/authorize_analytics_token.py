@@ -142,7 +142,9 @@ async def _blacklist_device(device_token: str) -> None:
 
     :raises: DiscardAnalyticsTokenException
     """
-    await set_device_check_bits(device_token, bit0=True, bit1=True)
+    if config.ENV == Environment.RELEASE:
+        await set_device_check_bits(device_token, bit0=True, bit1=True)
+
     raise DiscardAnalyticsTokenException()
 
 
