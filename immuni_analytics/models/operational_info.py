@@ -12,6 +12,7 @@
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
+
 from datetime import date
 from typing import Any, Dict
 
@@ -47,7 +48,9 @@ class OperationalInfo(Document):
             bluetooth_active=self.bluetooth_active,
             notification_permission=self.notification_permission,
             exposure_notification=self.exposure_notification,
-            last_risky_exposure_on=self.last_risky_exposure_on.isoformat() if self.last_risky_exposure_on else None
+            last_risky_exposure_on=self.last_risky_exposure_on.isoformat()
+            if self.last_risky_exposure_on
+            else None,
         )
 
     @staticmethod
@@ -65,6 +68,7 @@ class OperationalInfo(Document):
             bluetooth_active=value["bluetooth_active"],
             notification_permission=value["notification_permission"],
             exposure_notification=value["exposure_notification"],
-            last_risky_exposure_on=date.fromisoformat(value["last_risky_exposure_on"]) if value.get("last_risky_exposure_on") else None,
+            last_risky_exposure_on=date.fromisoformat(value["last_risky_exposure_on"])
+            if value.get("last_risky_exposure_on")
+            else None,
         )
-

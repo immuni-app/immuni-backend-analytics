@@ -26,5 +26,3 @@ def store_operational_info(operational_info: Dict[str, Any]) -> None:
     :param operational_info: a dictionary containing the operational information
     """
     OperationalInfo.from_dict(operational_info).save()
-
-
