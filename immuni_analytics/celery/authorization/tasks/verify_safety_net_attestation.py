@@ -37,7 +37,7 @@ def verify_safety_net_attestation(
     last_risky_exposure_on: str,
 ) -> None:  # pragma: no cover
     """
-     Celery doesn't support async functions, so we wrap it around asyncio.run.
+    Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
     asyncio.run(
         _verify_safety_net_attestation(
@@ -56,8 +56,8 @@ async def _verify_safety_net_attestation(
     last_risky_exposure_on: str,
 ) -> None:
     """
-    Verify that the safety_net_attestation is genuine. Prevent race conditions and save
-     the operational_info.
+    Verify that the safety_net_attestation is genuine. Prevent race conditions and save the
+    operational_info.
 
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.

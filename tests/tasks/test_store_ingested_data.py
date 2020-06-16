@@ -37,7 +37,8 @@ async def test_ingest_data(
     generate_redis_data: Callable[..., Dict[str, Any]],
 ) -> None:
     with patch(
-        "immuni_analytics.celery.exposure_payload.tasks.store_ingested_data.config.MAX_INGESTED_ELEMENTS",
+        "immuni_analytics.celery.exposure_payload.tasks.store_ingested_data.config."
+        "MAX_INGESTED_ELEMENTS",
         max_ingested_elements,
     ):
         if n_elements > 0:

@@ -12,7 +12,6 @@
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import logging
 from typing import Any
 
 from celery.signals import worker_process_init, worker_process_shutdown
@@ -22,11 +21,9 @@ from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_common.celery import CeleryApp
 
-_LOGGER = logging.getLogger(__name__)
-
 
 @worker_process_init.connect
-def worker_process_init_listener(**kwargs: Any) -> None:
+def worker_process_init_listener_operational_info(**kwargs: Any) -> None:
     """
     Listener on worker initialization to properly initialize the project's managers.
 
@@ -37,7 +34,7 @@ def worker_process_init_listener(**kwargs: Any) -> None:
 
 
 @worker_process_shutdown.connect
-def worker_process_shutdown_listener(**kwargs: Any) -> None:
+def worker_process_shutdown_listener_operational_info(**kwargs: Any) -> None:
     """
     Listener on worker shutdown to properly cleanup the project's managers.
 

@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from mongoengine import BooleanField, DateField, Document, StringField
 
@@ -27,13 +27,13 @@ class OperationalInfo(Document):
     Model representing the operational information to save in the database.
     """
 
-    platform = EnumField(enum=Platform, required=True)
-    province = StringField(required=True)
-    exposure_permission = BooleanField(required=True)
-    bluetooth_active = BooleanField(required=True)
-    notification_permission = BooleanField(required=True)
-    exposure_notification = BooleanField(required=True)
-    last_risky_exposure_on = DateField(required=False)
+    platform: Platform = EnumField(enum=Platform, required=True)
+    province: str = StringField(required=True)
+    exposure_permission: bool = BooleanField(required=True)
+    bluetooth_active: bool = BooleanField(required=True)
+    notification_permission: bool = BooleanField(required=True)
+    exposure_notification: bool = BooleanField(required=True)
+    last_risky_exposure_on: Optional[date] = DateField(required=False)
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -42,12 +42,13 @@ class OperationalInfo(Document):
         :return: a dictionary representing the OperationalInfo document.
         """
         return dict(
-            platform=self.platform.value,
+            platform=self.platform.value,  # pylint: disable=no-member
             province=self.province,
             exposure_permission=self.exposure_permission,
             bluetooth_active=self.bluetooth_active,
             notification_permission=self.notification_permission,
             exposure_notification=self.exposure_notification,
+            # pylint: disable=no-member
             last_risky_exposure_on=self.last_risky_exposure_on.isoformat()
             if self.last_risky_exposure_on
             else None,
