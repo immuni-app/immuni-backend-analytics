@@ -54,8 +54,8 @@ def client(
 
 
 @fixture(scope="function")
-def setup_celery_app(monitoring_setup: None) -> Celery:
-    from immuni_analytics.celery import celery_app
+def setup_exposure_payload_celery_app(monitoring_setup: None) -> Celery:
+    from immuni_analytics.celery.exposure_payload.app import celery_app
 
     celery_app.conf.update(CELERY_ALWAYS_EAGER=True)
     return celery_app

@@ -24,4 +24,12 @@ from immuni_common.helpers.tests import monitoring_setup  # noqa isort:skip
 check_environment()
 check_mongo_url(config.ANALYTICS_MONGO_URL, "ANALYTICS_MONGO_URL")
 check_redis_url(config.ANALYTICS_BROKER_REDIS_URL, "ANALYTICS_BROKER_REDIS_URL")
-check_redis_url(config.CELERY_BROKER_REDIS_URL, "CELERY_BROKER_REDIS_URL")
+check_redis_url(
+    config.CELERY_BROKER_REDIS_URL_AUTHORIZATION, "CELERY_BROKER_REDIS_URL_AUTHORIZATION"
+)
+check_redis_url(
+    config.CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD, "CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD"
+)
+check_redis_url(
+    config.CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO, "CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO"
+)

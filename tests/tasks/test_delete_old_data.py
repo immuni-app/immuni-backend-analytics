@@ -31,7 +31,7 @@ async def test_delete_old_data(
     model_logger_info: MagicMock,
     task_logger_info: MagicMock,
     generate_mongo_data: Callable[..., None],
-    setup_celery_app: Celery,
+    setup_exposure_payload_celery_app: Celery,
 ) -> None:
     with patch("immuni_analytics.core.config.DATA_RETENTION_DAYS", 15):
         reference_date = datetime(2020, 2, 20)
