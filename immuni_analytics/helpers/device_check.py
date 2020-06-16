@@ -10,6 +10,7 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 import json
 import logging
 import uuid
@@ -93,10 +94,11 @@ async def fetch_device_check_bits(token: str) -> DeviceCheckData:
             )
         except BadFormatRequestError:
             _LOGGER.warning(
-                "The DeviceCheck API returned a 400 error", extra={"device_token": token}
+                "The DeviceCheck API returned a 400 error.", extra={"device_token": token}
             )
             raise DeviceCheckApiError()
         except (ClientError, TimeoutError, ServerUnavailableError) as exc:
+            _LOGGER.warning("The DeviceCheck API is not available.", extra={"device_token": token})
             raise DeviceCheckApiError from exc
 
         # if the bits have never been set the api returns 200 with a specific string
@@ -132,4 +134,5 @@ async def set_device_check_bits(token: str, *, bit0: bool, bit1: bool) -> None:
             )
             raise DeviceCheckApiError()
         except (ClientError, TimeoutError, ServerUnavailableError) as exc:
+            _LOGGER.warning("The DeviceCheck API is not available.", extra={"device_token": token})
             raise DeviceCheckApiError from exc
