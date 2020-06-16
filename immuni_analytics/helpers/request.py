@@ -25,7 +25,7 @@ from tenacity import (
 
 from immuni_common.core.exceptions import ImmuniException
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class ServerUnavailableError(ImmuniException):
@@ -41,12 +41,10 @@ def after_log() -> Callable[[RetryCallState], None]:
 
     def log_it(retry_state: RetryCallState) -> None:
         """Logs the error and the attempt"""
-        exc = retry_state.outcome.exception()
+        exc = retry_state.outcome.exception() if retry_state.outcome is not None else None
         url = retry_state.kwargs.get("url")
-        logger.warning(
-            "Failed HTTP request",
-            url,
-            retry_state.attempt_number,
+        _LOGGER.warning(
+            "Failed HTTP request.",
             extra=dict(
                 exc=exc, request_args=retry_state, request_kwargs=retry_state.kwargs, url=url
             ),
@@ -56,9 +54,11 @@ def after_log() -> Callable[[RetryCallState], None]:
 
 
 @retry(
-    retry=retry_if_exception_type((ClientError, TimeoutError, ServerUnavailableError)),
-    wait=wait_exponential(multiplier=1, min=2, max=10),
-    stop=stop_after_attempt(3),
+    retry=retry_if_exception_type(
+        (ClientError, TimeoutError, ServerUnavailableError)
+    ),  # type: ignore
+    wait=wait_exponential(multiplier=1, min=2, max=10),  # type: ignore
+    stop=stop_after_attempt(3),  # type: ignore
     after=after_log(),
 )
 async def post_with_retry(
@@ -68,7 +68,7 @@ async def post_with_retry(
     Wrapper around aiohttp post with retry strategy.
 
     :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError
-    :return: the client response if successful
+    :return: the client response if successful.
     """
     # TODO timeout from config
     async with session.post(

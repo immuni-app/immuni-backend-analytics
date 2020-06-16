@@ -303,15 +303,15 @@ async def test_invalid_last_risky_exposure(
 
 @mark.parametrize(
     "field, value",
-    [
-        (f, v)
-        for f in [
+    [  # type: ignore
+        (field, value)
+        for field in [
             "exposure_permission",
             "bluetooth_active",
             "notification_permission",
             "exposure_notification",
         ]
-        for v in [-1, None, "", "string", {}]
+        for value in [-1, None, "", "string", {}]
     ],
 )
 async def test_invalid_integer_booleans(

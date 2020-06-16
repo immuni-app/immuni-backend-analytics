@@ -41,7 +41,7 @@ class DeviceCheckData:
         return date.fromisoformat(f"{self.last_update_time}-01")
 
     @property
-    def used_in_current_month(self):
+    def used_in_current_month(self) -> bool:
         """
         Whether the device has been already used to validate a token in the current month
         """
