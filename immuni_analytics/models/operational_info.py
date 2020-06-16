@@ -13,13 +13,17 @@
 
 from __future__ import annotations
 
-from datetime import date
+import logging
+from datetime import date, datetime
 from typing import Any, Dict, Optional
 
+from bson import ObjectId
 from mongoengine import BooleanField, DateField, Document, StringField
 
 from immuni_common.models.enums import Platform
 from immuni_common.models.mongoengine.enum_field import EnumField
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class OperationalInfo(Document):
@@ -72,4 +76,18 @@ class OperationalInfo(Document):
             last_risky_exposure_on=date.fromisoformat(value["last_risky_exposure_on"])
             if value.get("last_risky_exposure_on")
             else None,
+        )
+
+    @classmethod
+    def delete_older_than(cls, reference_date: datetime) -> None:
+        """
+        Delete all objects older than the given datetime.
+        :param reference_date: the datetime to check against.
+        """
+        objects = cls.objects.filter(id__lte=ObjectId.from_datetime(reference_date))
+        count = objects.delete()
+
+        _LOGGER.info(
+            "OperationalInfo documents deletion completed.",
+            extra={"n_deleted": count, "created_before": reference_date.isoformat()},
         )

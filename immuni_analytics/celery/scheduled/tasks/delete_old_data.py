@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
+from immuni_analytics.models.operational_info import OperationalInfo
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,4 +30,4 @@ def delete_old_data() -> None:
     _LOGGER.info("Data deletion started.",)
     reference_date = datetime.utcnow() - timedelta(days=config.DATA_RETENTION_DAYS)
     ExposurePayload.delete_older_than(reference_date)
-    # TODO: Add and call OperationalInfo.delete_older_than
+    OperationalInfo.delete_older_than(reference_date)
