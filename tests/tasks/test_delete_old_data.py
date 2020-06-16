@@ -18,14 +18,14 @@ from unittest.mock import MagicMock, patch
 from celery import Celery
 from freezegun import freeze_time
 
-from immuni_analytics.celery.exposure_payload.tasks.delete_old_exposure_payloads import (
-    delete_old_exposure_payloads,
+from immuni_analytics.celery.scheduled.tasks.delete_old_data import (
+    delete_old_data,
 )
 from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
 
 
-@patch("immuni_analytics.celery.exposure_payload.tasks.delete_old_exposure_payloads._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.delete_old_data._LOGGER.info")
 @patch("immuni_analytics.models.exposure_data._LOGGER.info")
 async def test_delete_old_data(
     model_logger_info: MagicMock,
@@ -43,7 +43,7 @@ async def test_delete_old_data(
 
             assert ExposurePayload.objects.count() == 25
 
-            delete_old_exposure_payloads.delay()
+            delete_old_data.delay()
 
             assert ExposurePayload.objects.count() == 10
         task_logger_info.assert_called_once_with("Data deletion started.")

@@ -21,4 +21,4 @@ class CeleryAppName(EnvarEnum):
 
     AUTHORIZATION = "authorization"
     OPERATIONAL_INFO = "operational_info"
-    EXPOSURE_PAYLOAD = "exposure_payload"
+    SCHEDULED = "scheduled"

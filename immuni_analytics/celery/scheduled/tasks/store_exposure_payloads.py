@@ -19,7 +19,7 @@ from json import JSONDecodeError
 from marshmallow import ValidationError as MarshmallowValidationError
 from mongoengine import ValidationError as MongoengineValidationError
 
-from immuni_analytics.celery.exposure_payload.app import celery_app
+from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.models.exposure_data import ExposurePayload

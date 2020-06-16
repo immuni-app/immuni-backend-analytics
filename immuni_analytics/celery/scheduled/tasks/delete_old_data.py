@@ -14,7 +14,7 @@
 import logging
 from datetime import datetime, timedelta
 
-from immuni_analytics.celery.exposure_payload.app import celery_app
+from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
 
@@ -22,10 +22,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @celery_app.task()
-def delete_old_exposure_payloads() -> None:
+def delete_old_data() -> None:
     """
-    Deletes all ExposurePayload objects older than the retention days.
+    Deletes all ExposurePayload and OperationalInfo objects older than the retention days.
     """
     _LOGGER.info("Data deletion started.",)
     reference_date = datetime.utcnow() - timedelta(days=config.DATA_RETENTION_DAYS)
     ExposurePayload.delete_older_than(reference_date)
+    # TODO: Add and call OperationalInfo.delete_older_than

@@ -5,7 +5,7 @@ x-common-environment: &common-environment
   ANALYTICS_MONGO_URL: "mongodb://mongo:27017"
   ANALYTICS_BROKER_REDIS_URL: "redis://analytics_redis:6379/0"
   CELERY_BROKER_REDIS_URL_AUTHORIZATION: "redis://celery_redis:6379/0"
-  CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD: "redis://celery_redis:6379/0"
+  CELERY_BROKER_REDIS_URL_SCHEDULED: "redis://celery_redis:6379/0"
   CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO: "redis://celery_redis:6379/0"
 
 x-common-service: &common-service

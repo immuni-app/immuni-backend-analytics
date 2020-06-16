@@ -84,8 +84,8 @@ class ExposurePayload(Document):
         """
         Convert a dictionary into a validated ExposurePayload.
 
-        :param payload: the dictionary to convert
-        :return: the corresponding ExposurePayload
+        :param payload: the dictionary to convert.
+        :return: the corresponding ExposurePayload.
         """
         if (
             not (province := payload.get("province"))
@@ -109,8 +109,8 @@ class ExposurePayload(Document):
     @classmethod
     def delete_older_than(cls, reference_date: datetime) -> None:
         """
-        Deletes all objects older than the given datetime
-        :param reference_date: datetime to check against
+        Delete all objects older than the given datetime.
+        :param reference_date: the datetime to check against.
         """
         objects = cls.objects.filter(id__lte=ObjectId.from_datetime(reference_date))
         count = objects.delete()

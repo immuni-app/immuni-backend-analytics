@@ -18,7 +18,7 @@ from celery.schedules import crontab
 from celery.signals import worker_process_init, worker_process_shutdown
 from croniter import croniter
 
-from immuni_analytics.celery.exposure_payload import tasks
+from immuni_analytics.celery.scheduled import tasks
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_common.celery import CeleryApp, Schedule
@@ -33,11 +33,11 @@ def _get_schedules() -> Tuple[Schedule, ...]:
     :return: the tuple of tasks schedules.
     """
 
-    from immuni_analytics.celery.exposure_payload.tasks.store_ingested_data import (
+    from immuni_analytics.celery.scheduled.tasks.store_exposure_payloads import (
         store_exposure_payloads,
     )
-    from immuni_analytics.celery.exposure_payload.tasks.delete_old_exposure_payloads import (
-        delete_old_exposure_payloads,
+    from immuni_analytics.celery.scheduled.tasks.delete_old_data import (
+        delete_old_data,
     )
 
     # TODO: move to common
@@ -50,7 +50,7 @@ def _get_schedules() -> Tuple[Schedule, ...]:
             when=crontab(*to_crontab_args(config.STORE_INGESTED_DATA_PERIODICITY)),
         ),
         Schedule(
-            task=delete_old_exposure_payloads,
+            task=delete_old_data,
             when=crontab(*to_crontab_args(config.DELETE_OLD_DATA_PERIODICITY)),
         ),
     )
@@ -80,7 +80,7 @@ def worker_process_shutdown_listener_exposure_payload(**kwargs: Any) -> None:
 
 celery_app = CeleryApp(
     service_dir_name="immuni_analytics.celery.exposure_payload",
-    broker_redis_url=config.CELERY_BROKER_REDIS_URL_EXPOSURE_PAYLOAD,
+    broker_redis_url=config.CELERY_BROKER_REDIS_URL_SCHEDULED,
     always_eager=config.CELERY_ALWAYS_EAGER,
     schedules_function=_get_schedules,
     tasks_module=tasks,

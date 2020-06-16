@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, call, patch
 
 from pytest import mark
 
-from immuni_analytics.celery.exposure_payload.tasks.store_ingested_data import (
+from immuni_analytics.celery.scheduled.tasks.store_exposure_payloads import (
     _store_exposure_payloads,
 )
 from immuni_analytics.core import config
@@ -29,7 +29,7 @@ from immuni_analytics.models.exposure_data import ExposurePayload
     "n_elements, max_ingested_elements",
     tuple((e, m) for e in range(0, 50, 10) for m in range(10, 50, 25)),
 )
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_ingest_data(
     logger_info: MagicMock,
     n_elements: int,
@@ -37,7 +37,7 @@ async def test_ingest_data(
     generate_redis_data: Callable[..., Dict[str, Any]],
 ) -> None:
     with patch(
-        "immuni_analytics.celery.exposure_payload.tasks.store_ingested_data.config."
+        "immuni_analytics.celery.scheduled.tasks.store_ingested_data.config."
         "MAX_INGESTED_ELEMENTS",
         max_ingested_elements,
     ):
@@ -70,8 +70,8 @@ async def test_ingest_data(
         )
 
 
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.warning")
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_json_error(
     logger_info: MagicMock,
     logger_warning: MagicMock,
@@ -107,8 +107,8 @@ async def test_json_error(
         )
 
 
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.warning")
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_validation_error(
     logger_info: MagicMock,
     logger_warning: MagicMock,
@@ -145,8 +145,8 @@ async def test_validation_error(
         )
 
 
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.warning")
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_wrong_exposure_data_error(
     logger_info: MagicMock,
     logger_warning: MagicMock,
@@ -187,8 +187,8 @@ async def test_wrong_exposure_data_error(
         )
 
 
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.warning")
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_empty_exposure_info_summary(
     logger_info: MagicMock,
     logger_warning: MagicMock,
@@ -223,8 +223,8 @@ async def test_empty_exposure_info_summary(
         logger_warning.assert_not_called()
 
 
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.warning")
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_empty_exposure_info(
     logger_info: MagicMock,
     logger_warning: MagicMock,
@@ -259,8 +259,8 @@ async def test_empty_exposure_info(
         logger_warning.assert_not_called()
 
 
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.warning")
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_missing_symptoms_started_on(
     logger_info: MagicMock,
     logger_warning: MagicMock,
@@ -296,8 +296,8 @@ async def test_missing_symptoms_started_on(
 
 
 @mark.parametrize("value", ["asd", [], {}, "2020-123-01", "2020-01-123"])
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.warning")
-@patch("immuni_analytics.celery.exposure_payload.tasks.store_ingested_data._LOGGER.info")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.warning")
+@patch("immuni_analytics.celery.scheduled.tasks.store_ingested_data._LOGGER.info")
 async def test_wrong_symptoms_started_on(
     logger_info: MagicMock,
     logger_warning: MagicMock,
