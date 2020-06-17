@@ -100,3 +100,6 @@ SALT_LENGTH: int = config("SALT_LENGTH", cast=int, default=24)
 SIGNED_ATTESTATION_MAX_LENGTH: int = config(
     "SIGNED_ATTESTATION_MAX_LENGTH", cast=int, default=10_000
 )
+
+DUMMY_REQUEST_TIMEOUT_MILLIS: int = config("DUMMY_REQUEST_TIMEOUT_MILLIS", cast=int, default=150)
+DUMMY_REQUEST_TIMEOUT_SIGMA: int = config("DUMMY_REQUEST_TIMEOUT_SIGMA", cast=int, default=20)
