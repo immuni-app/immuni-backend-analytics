@@ -17,12 +17,10 @@ from typing import Any, Dict
 from aioredis.commands import StringCommandsMixin
 
 from immuni_analytics.celery.authorization.app import celery_app
-from immuni_analytics.celery.operational_info.tasks.store_operational_info import (
-    store_operational_info,
-)
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
+from immuni_analytics.helpers.redis import enqueue_operational_info
 from immuni_analytics.helpers.safety_net import SafetyNetVerificationError
 from immuni_analytics.models.operational_info import OperationalInfo
 
@@ -78,7 +76,7 @@ async def _verify_safety_net_attestation(
         expire=config.SAFETY_NET_MAX_SKEW_MINUTES * 60,
         exist=StringCommandsMixin.SET_IF_NOT_EXIST,
     ):
-        store_operational_info.delay(operational_info.to_dict())
+        await enqueue_operational_info(operational_info)
     else:
         _LOGGER.warning(
             "Found previously used salt.",

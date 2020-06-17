@@ -28,13 +28,13 @@ from immuni_analytics.celery.authorization.tasks.authorize_analytics_token impor
 from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation import (
     verify_safety_net_attestation,
 )
-from immuni_analytics.celery.operational_info.tasks.store_operational_info import (
-    store_operational_info,
-)
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
-from immuni_analytics.helpers.redis import get_authorized_tokens_redis_key_current_month
+from immuni_analytics.helpers.redis import (
+    enqueue_operational_info,
+    get_authorized_tokens_redis_key_current_month,
+)
 from immuni_analytics.models.operational_info import OperationalInfo as OperationalInfoDocument
 from immuni_analytics.models.swagger import (
     AppleOperationalInfo,
@@ -124,7 +124,7 @@ async def post_operational_info(  # pylint: disable=too-many-arguments
     if await managers.analytics_redis.srem(
         get_authorized_tokens_redis_key_current_month(exposure_notification), request.token
     ):
-        store_operational_info.delay(
+        await enqueue_operational_info(
             OperationalInfoDocument(
                 platform=Platform.IOS,
                 province=province,
@@ -133,7 +133,7 @@ async def post_operational_info(  # pylint: disable=too-many-arguments
                 notification_permission=notification_permission,
                 exposure_notification=exposure_notification,
                 last_risky_exposure_on=last_risky_exposure_on if exposure_notification else None,
-            ).to_dict()
+            )
         )
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)

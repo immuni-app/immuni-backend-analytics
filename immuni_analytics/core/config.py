@@ -30,7 +30,9 @@ ANALYTICS_MONGO_URL = config(
 ANALYTICS_BROKER_REDIS_URL: str = config(
     "ANALYTICS_BROKER_REDIS_URL", default="redis://localhost:6379/1"
 )
-EXPOSURE_PAYLOAD_QUEUE_KEY: str = config("EXPOSURE_PAYLOAD_QUEUE_KEY", default="ingested_exposure_data")
+EXPOSURE_PAYLOAD_QUEUE_KEY: str = config(
+    "EXPOSURE_PAYLOAD_QUEUE_KEY", default="ingested_exposure_data"
+)
 EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY: str = config(
     "EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY", default="errors_exposure_data"
 )
