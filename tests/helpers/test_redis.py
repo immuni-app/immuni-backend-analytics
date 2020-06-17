@@ -13,46 +13,41 @@
 from freezegun import freeze_time
 
 from immuni_analytics.helpers.redis import (
-    get_authorized_tokens_redis_key_current_month,
-    get_authorized_tokens_redis_key_next_month,
+    get_all_authorizations_for_upload,
+    get_upload_authorization_member_for_current_month, get_upload_authorization_member_for_next_month
 )
 
 
 @freeze_time("2020-01-31")
 def test_get_authorized_tokens_with_exposure_redis_key_current_month() -> None:
-    assert (
-        get_authorized_tokens_redis_key_current_month(with_exposure=True)
-        == "authorized-with-exposure:2020-01-01"
-    )
+    assert get_upload_authorization_member_for_current_month(with_exposure=True) == "2020-01-01:1"
 
 
 @freeze_time("2020-01-31")
 def test_get_authorized_tokens_without_exposure_redis_key_current_month() -> None:
-    assert (
-        get_authorized_tokens_redis_key_current_month(with_exposure=False)
-        == "authorized-without-exposure:2020-01-01"
-    )
+    assert get_upload_authorization_member_for_current_month(with_exposure=False) == "2020-01-01:0"
 
 
 @freeze_time("2020-01-31")
 def test_get_authorized_tokens_with_exposure_redis_key_next_month() -> None:
-    assert (
-        get_authorized_tokens_redis_key_next_month(with_exposure=True)
-        == "authorized-with-exposure:2020-02-01"
-    )
+    assert get_upload_authorization_member_for_next_month(with_exposure=True) == "2020-02-01:1"
 
 
 @freeze_time("2020-01-31")
 def test_get_authorized_tokens_without_exposure_redis_key_next_month() -> None:
-    assert (
-        get_authorized_tokens_redis_key_next_month(with_exposure=False)
-        == "authorized-without-exposure:2020-02-01"
-    )
+    assert get_upload_authorization_member_for_next_month(with_exposure=False) == "2020-02-01:0"
 
 
 @freeze_time("2019-12-15")
 def test_get_authorized_tokens_without_exposure_redis_key_next_month_year_change() -> None:
-    assert (
-        get_authorized_tokens_redis_key_next_month(with_exposure=False)
-        == "authorized-without-exposure:2020-01-01"
-    )
+    assert get_upload_authorization_member_for_next_month(with_exposure=False) == "2020-01-01:0"
+
+
+@freeze_time("2019-12-15")
+def test_get_authorized_tokens_without_exposure_redis_key_next_month_year_change() -> None:
+    assert get_all_authorizations_for_upload() == [
+        "2019-12-01:1",
+        "2019-12-01:0",
+        "2020-01-01:1",
+        "2020-01-01:0",
+    ]

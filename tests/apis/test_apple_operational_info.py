@@ -10,6 +10,7 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 import json
 from copy import deepcopy
 from datetime import date
@@ -21,7 +22,7 @@ from pytest_sanic.utils import TestClient
 
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
-from immuni_analytics.helpers.redis import get_authorized_tokens_redis_key_current_month
+from immuni_analytics.helpers.redis import get_upload_authorization_member_for_current_month
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.models.enums import Platform
 
@@ -59,7 +60,7 @@ async def test_apple_operational_info_with_exposure(
 ) -> None:
     # authorize the current token for the upload
     await managers.analytics_redis.sadd(
-        get_authorized_tokens_redis_key_current_month(with_exposure=True), ANALYTICS_TOKEN
+        ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=True)
     )
 
     response = await client.post(
@@ -81,7 +82,7 @@ async def test_apple_operational_info_with_exposure(
         ).to_dict()
     )
     assert not await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=True), ANALYTICS_TOKEN
+        get_upload_authorization_member_for_current_month(with_exposure=True), ANALYTICS_TOKEN
     )
 
 
@@ -103,7 +104,7 @@ async def test_apple_operational_info_without_exposure(
 
     # authorize the current token for the upload
     await managers.analytics_redis.sadd(
-        get_authorized_tokens_redis_key_current_month(with_exposure=False), ANALYTICS_TOKEN
+        ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=False)
     )
 
     response = await client.post(
@@ -126,7 +127,7 @@ async def test_apple_operational_info_without_exposure(
     )
 
     assert not await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=False), ANALYTICS_TOKEN
+        get_upload_authorization_member_for_current_month(with_exposure=False), ANALYTICS_TOKEN
     )
 
 

@@ -35,8 +35,7 @@ from immuni_analytics.helpers import safety_net
 from immuni_analytics.helpers.api import allows_dummy_requests, inject_operational_info
 from immuni_analytics.helpers.redis import (
     enqueue_operational_info,
-    get_authorized_tokens_redis_key_current_month,
-)
+    is_upload_authorized_for_token, get_upload_authorization_member_for_current_month)
 from immuni_analytics.models.operational_info import OperationalInfo as OperationalInfoDocument
 from immuni_analytics.models.swagger import (
     AppleOperationalInfo,
@@ -100,8 +99,7 @@ async def post_operational_info(
     :return: 204 in any case.
     """
     if await managers.analytics_redis.srem(
-        get_authorized_tokens_redis_key_current_month(operational_info.exposure_notification),
-        request.token,
+        request.token, get_upload_authorization_member_for_current_month(operational_info.exposure_notification)
     ):
         await enqueue_operational_info(operational_info)
 
@@ -138,11 +136,7 @@ async def authorize_token(
     :param device_token: the device token to check against Apple DeviceCheck.
     :return: 201 if the token has been authorized already, 202 otherwise.
     """
-    if await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token
-    ) or await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=False), analytics_token
-    ):
+    if await is_upload_authorized_for_token(analytics_token):
         return json_response(body=None, status=HTTPStatus.CREATED)
 
     authorize_analytics_token.delay(analytics_token, device_token)

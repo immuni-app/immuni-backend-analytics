@@ -19,10 +19,7 @@ from immuni_analytics.celery.authorization.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.device_check import fetch_device_check_bits, set_device_check_bits
-from immuni_analytics.helpers.redis import (
-    get_authorized_tokens_redis_key_current_month,
-    get_authorized_tokens_redis_key_next_month,
-)
+from immuni_analytics.helpers.redis import get_all_authorizations_for_upload
 from immuni_common.core.exceptions import ImmuniException
 from immuni_common.models.enums import Environment
 
@@ -163,11 +160,9 @@ async def _blacklist_device(device_token: str) -> None:
 
 async def _add_analytics_token_to_redis(analytics_token: str) -> None:
     """
-    Add the analytics token to the sets corresponding to the current and the next months.
+    Add the values needed to update operational info for the current and the next month
+    to the set associated with the analytics token.
+
+    :param analytics_token: the analytics token to authorize for upload.
     """
-    pipe = managers.analytics_redis.pipeline()
-    pipe.sadd(get_authorized_tokens_redis_key_current_month(with_exposure=True), analytics_token)
-    pipe.sadd(get_authorized_tokens_redis_key_current_month(with_exposure=False), analytics_token)
-    pipe.sadd(get_authorized_tokens_redis_key_next_month(with_exposure=True), analytics_token)
-    pipe.sadd(get_authorized_tokens_redis_key_next_month(with_exposure=False), analytics_token)
-    await pipe.execute()
+    await managers.analytics_redis.sadd(analytics_token, *get_all_authorizations_for_upload())

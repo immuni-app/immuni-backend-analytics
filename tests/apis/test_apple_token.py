@@ -24,8 +24,8 @@ from immuni_analytics.celery.authorization.tasks.authorize_analytics_token impor
 )
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.redis import (
-    get_authorized_tokens_redis_key_current_month,
-    get_authorized_tokens_redis_key_next_month,
+    get_upload_authorization_member_for_current_month,
+    get_upload_authorization_member_for_next_month,
 )
 
 ANALYTICS_TOKEN = (
@@ -47,16 +47,16 @@ async def test_apple_token(client: TestClient) -> None:
 
     assert response.status == HTTPStatus.ACCEPTED.value
     assert await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=True), ANALYTICS_TOKEN
+        ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=True)
     )
     assert await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_current_month(with_exposure=False), ANALYTICS_TOKEN
+        ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=False)
     )
     assert await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_next_month(with_exposure=True), ANALYTICS_TOKEN
+        ANALYTICS_TOKEN, get_upload_authorization_member_for_next_month(with_exposure=True)
     )
     assert await managers.analytics_redis.sismember(
-        get_authorized_tokens_redis_key_next_month(with_exposure=False), ANALYTICS_TOKEN
+        ANALYTICS_TOKEN, get_upload_authorization_member_for_next_month(with_exposure=False)
     )
 
     response = await client.post(
