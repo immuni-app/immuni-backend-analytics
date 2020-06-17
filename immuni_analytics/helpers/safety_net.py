@@ -23,8 +23,11 @@ from typing import Any, Dict, List
 import certvalidator
 import jwt
 from certvalidator import CertificateValidator
+from cryptography.exceptions import UnsupportedAlgorithm
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+from cryptography.x509 import Certificate, load_der_x509_certificate
 from jwt import DecodeError
-from OpenSSL import crypto
 
 from immuni_analytics.core import config
 from immuni_analytics.models.operational_info import OperationalInfo
@@ -141,7 +144,7 @@ def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
     return certificates
 
 
-def _load_leaf_certificate(certificates: List[bytes]) -> crypto.x509:
+def _load_leaf_certificate(certificates: List[bytes]) -> Certificate:
     """
     Load the lead certificate give the list of certificates.
 
@@ -151,8 +154,8 @@ def _load_leaf_certificate(certificates: List[bytes]) -> crypto.x509:
     """
     leaf_certificate = certificates[0]
     try:
-        return crypto.load_certificate(crypto.FILETYPE_ASN1, leaf_certificate)
-    except crypto.Error as exc:
+        return load_der_x509_certificate(leaf_certificate, default_backend())
+    except (ValueError, UnsupportedAlgorithm) as exc:
         _LOGGER.warning(
             "Could not load the leaf certificate.",
             extra=dict(error=str(exc), leaf_certificate=leaf_certificate),
@@ -188,7 +191,12 @@ def _verify_signature(jws_token: str, certificates: List[bytes]) -> None:
     :raises: SafetyNetVerificationError if the signature could not be verified.
     """
     leaf_certificate = _load_leaf_certificate(certificates)
-    public_key = crypto.dump_publickey(crypto.FILETYPE_PEM, leaf_certificate.get_pubkey())
+    public_key = leaf_certificate.public_key()
+    if not isinstance(public_key, RSAPublicKey):
+        _LOGGER.warning(
+            "Unexpected certificate public_key type.", extra=dict(public_key=public_key),
+        )
+        raise SafetyNetVerificationError()
     try:
         jwt.decode(jws_token, public_key)
     except DecodeError as exc:

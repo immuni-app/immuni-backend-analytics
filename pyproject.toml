@@ -11,13 +11,10 @@ authors = []
 [tool.poetry.dependencies]
 aiohttp = "==3.6.2"
 certvalidator = "==0.11.1"
-croniter = "==0.3.31"
 cryptography = "==2.9.2"
 immuni-common = { path = "common", develop = true, extras = ["aioredis", "celery"] }
-pycryptodome = "==3.9.7"
-pyjwt = "==1.7.1"
+pyjwt = { version = "==1.7.1", extras = ["crypto"] }
 python = "^3.8"
-pyOpenSSL = "==19.1.0"
 tenacity = "==6.2.0"
 
 [tool.poetry.dev-dependencies]
