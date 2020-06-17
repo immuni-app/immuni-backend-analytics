@@ -31,7 +31,7 @@ from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation i
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
-from immuni_analytics.helpers.dummy import allows_dummy_requests
+from immuni_analytics.helpers.api import allows_dummy_requests
 from immuni_analytics.helpers.redis import (
     enqueue_operational_info,
     get_authorized_tokens_redis_key_current_month,
