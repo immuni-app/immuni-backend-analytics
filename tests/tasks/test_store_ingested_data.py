@@ -41,7 +41,7 @@ async def test_ingest_data(
     ):
         if n_elements > 0:
             await managers.analytics_redis.rpush(
-                config.ANALYTICS_QUEUE_KEY,
+                config.EXPOSURE_PAYLOAD_QUEUE_KEY,
                 *[json.dumps(d) for d in generate_redis_data(length=n_elements)]
             )
         assert ExposurePayload.objects.count() == 0
@@ -77,7 +77,7 @@ async def test_json_error(
 ) -> None:
     with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 2):
         await managers.analytics_redis.rpush(
-            config.ANALYTICS_QUEUE_KEY,
+            config.EXPOSURE_PAYLOAD_QUEUE_KEY,
             "non_json_string",
             *[json.dumps(d) for d in generate_redis_data(length=3)]
         )
@@ -88,7 +88,7 @@ async def test_json_error(
 
         assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 1
+        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
@@ -117,7 +117,7 @@ async def test_validation_error(
         redis_data[0]["payload"]["exposure_detection_summaries"][0]["date"] = "2020-11-123"
 
         await managers.analytics_redis.rpush(
-            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
         )
 
         assert ExposurePayload.objects.count() == 0
@@ -126,7 +126,7 @@ async def test_validation_error(
 
         assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 1
+        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
@@ -159,7 +159,7 @@ async def test_wrong_exposure_data_error(
         del redis_data[4]["payload"]["exposure_detection_summaries"]
 
         await managers.analytics_redis.rpush(
-            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
         )
 
         assert ExposurePayload.objects.count() == 0
@@ -168,7 +168,7 @@ async def test_wrong_exposure_data_error(
 
         assert ExposurePayload.objects.count() == 0
 
-        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 5
+        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 5
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
@@ -197,7 +197,7 @@ async def test_empty_exposure_info_summary(
         redis_data[0]["payload"]["exposure_detection_summaries"] = []
 
         await managers.analytics_redis.rpush(
-            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
         )
 
         assert ExposurePayload.objects.count() == 0
@@ -206,7 +206,7 @@ async def test_empty_exposure_info_summary(
 
         assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 0
+        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
@@ -233,7 +233,7 @@ async def test_empty_exposure_info(
         redis_data[0]["payload"]["exposure_detection_summaries"][0]["exposure_info"] = []
 
         await managers.analytics_redis.rpush(
-            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
         )
 
         assert ExposurePayload.objects.count() == 0
@@ -242,7 +242,7 @@ async def test_empty_exposure_info(
 
         assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 0
+        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
@@ -269,7 +269,7 @@ async def test_missing_symptoms_started_on(
         del redis_data[0]["payload"]["symptoms_started_on"]
 
         await managers.analytics_redis.rpush(
-            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
         )
 
         assert ExposurePayload.objects.count() == 0
@@ -278,7 +278,7 @@ async def test_missing_symptoms_started_on(
 
         assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 0
+        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
@@ -307,7 +307,7 @@ async def test_wrong_symptoms_started_on(
         redis_data[0]["payload"]["symptoms_started_on"] = value
 
         await managers.analytics_redis.rpush(
-            config.ANALYTICS_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
         )
 
         assert ExposurePayload.objects.count() == 0
@@ -315,7 +315,7 @@ async def test_wrong_symptoms_started_on(
         await _store_exposure_payloads()
 
         assert ExposurePayload.objects.count() == 0
-        assert (await managers.analytics_redis.llen(config.ANALYTICS_ERRORS_QUEUE_KEY)) == 1
+        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
 
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(

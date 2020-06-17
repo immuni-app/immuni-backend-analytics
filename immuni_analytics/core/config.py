@@ -30,10 +30,11 @@ ANALYTICS_MONGO_URL = config(
 ANALYTICS_BROKER_REDIS_URL: str = config(
     "ANALYTICS_BROKER_REDIS_URL", default="redis://localhost:6379/1"
 )
-ANALYTICS_QUEUE_KEY: str = config("ANALYTICS_QUEUE_KEY", default="ingested_exposure_data")
-ANALYTICS_ERRORS_QUEUE_KEY: str = config(
-    "ANALYTICS_ERRORS_QUEUE_KEY", default="errors_exposure_data"
+EXPOSURE_PAYLOAD_QUEUE_KEY: str = config("EXPOSURE_PAYLOAD_QUEUE_KEY", default="ingested_exposure_data")
+EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY: str = config(
+    "EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY", default="errors_exposure_data"
 )
+OPERATIONAL_INFO_QUEUE_KEY: str = config("OPERATIONAL_INFO_QUEUE_KEY", default="operational_info")
 
 CELERY_ALWAYS_EAGER: bool = config(
     "CELERY_ALWAYS_EAGER", cast=bool, default=ENV == Environment.TESTING

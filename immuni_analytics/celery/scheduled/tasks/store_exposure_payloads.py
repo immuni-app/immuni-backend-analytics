@@ -47,8 +47,8 @@ async def _store_exposure_payloads() -> None:
     """
     _LOGGER.info("Data ingestion started.")
     pipe = managers.analytics_redis.pipeline()
-    pipe.lrange(config.ANALYTICS_QUEUE_KEY, 0, config.MAX_INGESTED_ELEMENTS - 1)
-    pipe.ltrim(config.ANALYTICS_QUEUE_KEY, config.MAX_INGESTED_ELEMENTS, -1)
+    pipe.lrange(config.EXPOSURE_PAYLOAD_QUEUE_KEY, 0, config.MAX_INGESTED_ELEMENTS - 1)
+    pipe.ltrim(config.EXPOSURE_PAYLOAD_QUEUE_KEY, config.MAX_INGESTED_ELEMENTS, -1)
     ingested_data = (await pipe.execute())[0]
 
     bad_format_data = []
@@ -74,9 +74,9 @@ async def _store_exposure_payloads() -> None:
         _LOGGER.warning(
             "Found ingested data with bad format.", extra={"bad_format_data": len(bad_format_data)}
         )
-        managers.analytics_redis.rpush(config.ANALYTICS_ERRORS_QUEUE_KEY, *bad_format_data)
+        managers.analytics_redis.rpush(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY, *bad_format_data)
 
-    queue_length = await managers.analytics_redis.llen(config.ANALYTICS_QUEUE_KEY)
+    queue_length = await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_QUEUE_KEY)
     _LOGGER.info(
         "Data ingestion completed.",
         extra={"ingested_data": len(exposure_data), "ingestion_queue_length": queue_length},
