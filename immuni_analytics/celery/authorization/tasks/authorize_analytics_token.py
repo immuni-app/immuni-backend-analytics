@@ -33,6 +33,10 @@ class DiscardAnalyticsTokenException(ImmuniException):
     """Raised when the device cannot authorize an analytics token."""
 
 
+class BlacklistDeviceException(ImmuniException):
+    """Raised when a device is attempting to validate multiple tokens."""
+
+
 @celery_app.task()
 def authorize_analytics_token(analytics_token: str, device_token: str) -> None:  # pragma: no cover
     """
@@ -52,6 +56,10 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
         await _second_step(device_token)
         await asyncio.sleep(random.uniform(1, config.READ_TIME_SECONDS))  # nosec
         await _third_step(device_token)
+
+    except BlacklistDeviceException:
+        await _blacklist_device(device_token)
+
     except DiscardAnalyticsTokenException:
         return
 
@@ -63,9 +71,13 @@ async def _first_step(device_token: str) -> None:
     Fetch the DeviceCheck bits and ensure the configuration is expected.
     If not, blacklist the device.
 
-    :raises: DiscardAnalyticsTokenException
+    :raises: BlacklistDeviceException if an anomaly is detected,
+     DiscardAnalyticsTokenException if the device token has been used already in the current month.
     """
     device_check_data = await fetch_device_check_bits(device_token)
+
+    # Do not perform this check if we are not in release environment otherwise we can use a
+    # developer device only once a month.
     if config.ENV == Environment.RELEASE and device_check_data.used_in_current_month:
         _LOGGER.warning(
             "Found token already used in current month",
@@ -88,7 +100,7 @@ async def _first_step(device_token: str) -> None:
                 last_update_time=device_check_data.last_update_time,
             ),
         )
-        await _blacklist_device(device_token)
+        raise BlacklistDeviceException()
 
 
 async def _second_step(device_token: str) -> None:
@@ -97,7 +109,7 @@ async def _second_step(device_token: str) -> None:
     If it is, set the bits to (0,1) and return.
     If not, blacklist the device.
 
-    :raises: DiscardAnalyticsTokenException
+    :raises: BlacklistDeviceException if an anomaly is detected.
     """
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_default_configuration_compliant:
@@ -110,7 +122,7 @@ async def _second_step(device_token: str) -> None:
                 last_update_time=device_check_data.last_update_time,
             ),
         )
-        await _blacklist_device(device_token)
+        raise BlacklistDeviceException()
 
     await set_device_check_bits(device_token, bit0=True, bit1=False)
 
@@ -121,7 +133,7 @@ async def _third_step(device_token: str) -> None:
     If it is, set the bits to (0,0) and return.
     If not, blacklist the device.
 
-    :raises: DiscardAnalyticsTokenException
+    :raises: BlacklistDeviceException if an anomaly is detected.
     """
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_authorized_configuration_compliant:
@@ -134,7 +146,7 @@ async def _third_step(device_token: str) -> None:
                 last_update_time=device_check_data.last_update_time,
             ),
         )
-        await _blacklist_device(device_token)
+        raise BlacklistDeviceException()
 
     await set_device_check_bits(device_token, bit0=False, bit1=False)
 
@@ -142,13 +154,11 @@ async def _third_step(device_token: str) -> None:
 async def _blacklist_device(device_token: str) -> None:
     """
     Set the both DeviceCheck bits to True, a configuration that marks blacklisted devices.
-
-    :raises: DiscardAnalyticsTokenException
     """
+    # Do not blacklist devices if we are not in release environment otherwise we need to
+    # manually unlock developer devices
     if config.ENV == Environment.RELEASE:
         await set_device_check_bits(device_token, bit0=True, bit1=True)
-
-    raise DiscardAnalyticsTokenException()
 
 
 async def _add_analytics_token_to_redis(analytics_token: str) -> None:
