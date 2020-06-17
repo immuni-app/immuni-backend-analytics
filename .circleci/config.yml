@@ -183,6 +183,17 @@ jobs:
           command: |
             docker exec docker_beat_1 \
                 ps -e | grep celery
+      - run:
+          name: "[sanic] API health check"
+          command: |
+            docker run \
+                --network container:docker_api_1 \
+                appropriate/curl \
+                --verbose \
+                --retry 10 \
+                --retry-delay 1 \
+                --retry-connrefused \
+                http://localhost:5000
 
 workflows:
   code-quality:
