@@ -10,6 +10,7 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
+import json
 from copy import deepcopy
 from datetime import date
 from http import HTTPStatus
@@ -18,6 +19,7 @@ from typing import Any, Dict
 from pytest import fixture, mark
 from pytest_sanic.utils import TestClient
 
+from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.redis import get_authorized_tokens_redis_key_current_month
 from immuni_analytics.models.operational_info import OperationalInfo
@@ -65,9 +67,9 @@ async def test_apple_operational_info_with_exposure(
     )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
-        OperationalInfo.objects.exclude("id").first().to_dict()
+        json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
             platform=Platform.IOS,
             province=operational_info["province"],
@@ -82,12 +84,15 @@ async def test_apple_operational_info_with_exposure(
         get_authorized_tokens_redis_key_current_month(with_exposure=True), ANALYTICS_TOKEN
     )
 
-    # only one call is authorized with a given token
+
+async def test_apple_operational_info_missing_token(
+    client: TestClient, operational_info: Dict[str, Any], headers: Dict[str, str]
+) -> None:
     response = await client.post(
         "/v1/analytics/apple/operational-info", json=operational_info, headers=headers,
     )
     assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 0
 
 
 async def test_apple_operational_info_without_exposure(
@@ -106,9 +111,9 @@ async def test_apple_operational_info_without_exposure(
     )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
-        OperationalInfo.objects.first().to_dict()
+        json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
             platform=Platform.IOS,
             province=operational_info["province"],
@@ -123,13 +128,6 @@ async def test_apple_operational_info_without_exposure(
     assert not await managers.analytics_redis.sismember(
         get_authorized_tokens_redis_key_current_month(with_exposure=False), ANALYTICS_TOKEN
     )
-
-    # only one call is authorized with a given token
-    response = await client.post(
-        "/v1/analytics/apple/operational-info", json=operational_info, headers=headers,
-    )
-    assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
 
 
 async def test_apple_operational_info_dummy(

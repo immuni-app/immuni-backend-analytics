@@ -169,15 +169,15 @@ jobs:
           name: "[misc] Let the Celery app start"
           command: sleep 3
       - run:
-          name: "[celery] Worker mongo health check"
+          name: "[celery] Worker authorization health check"
           command: |
-            docker exec docker_worker_mongo_1 \
-                celery inspect stats --app=immuni_analytics.celery.celery_app
+            docker exec docker_worker_authorization_1 \
+                celery inspect stats --app=immuni_analytics.celery.authorization.app.celery_app
       - run:
-          name: "[celery] Worker redis health check"
+          name: "[celery] Worker scheduled health check"
           command: |
-            docker exec docker_worker_redis_1 \
-                celery inspect stats --app=immuni_analytics.celery.celery_app
+            docker exec docker_worker_scheduled_1 \
+                celery inspect stats --app=immuni_analytics.celery.scheduled.app.celery_app
       - run:
           name: "[celery] Beat health check"
           command: |

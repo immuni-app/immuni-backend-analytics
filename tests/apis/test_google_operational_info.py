@@ -10,7 +10,7 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
-
+import json
 from datetime import date, datetime
 from http import HTTPStatus
 from typing import Any, Dict
@@ -23,6 +23,7 @@ from pytest_sanic.utils import TestClient
 from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation import (
     _verify_safety_net_attestation,
 )
+from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.safety_net import get_redis_key
 from immuni_analytics.models.operational_info import OperationalInfo
@@ -57,9 +58,9 @@ async def test_google_operational_info_with_exposure(
             )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
-        OperationalInfo.objects.first().to_dict()
+        json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
             platform=Platform.ANDROID,
             province=safety_net_post_body_with_exposure["province"],
@@ -103,9 +104,9 @@ async def test_google_operational_info_without_exposure(
             )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
-        OperationalInfo.objects.first().to_dict()
+        json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
             platform=Platform.ANDROID,
             province=safety_net_post_body_without_exposure["province"],
@@ -173,7 +174,7 @@ async def test_google_operational_info_used_salt(
             )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
         await managers.analytics_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
@@ -188,7 +189,7 @@ async def test_google_operational_info_used_salt(
     )
 
     assert response.status == HTTPStatus.NO_CONTENT.value
-    assert OperationalInfo.objects.count() == 1
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
         await managers.analytics_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])

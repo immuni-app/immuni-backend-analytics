@@ -10,8 +10,12 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
+import json
 
+from immuni_analytics.core import config
+from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.date_utils import current_month, next_month
+from immuni_analytics.models.operational_info import OperationalInfo
 
 
 def get_authorized_tokens_redis_key_current_month(with_exposure: bool) -> str:
@@ -45,3 +49,14 @@ def _authorized_tokens_redis_key_prefix(with_exposure: bool) -> str:
     :return: the prefix for the redis key.
     """
     return f"authorized-{'with-exposure' if with_exposure else 'without-exposure'}"
+
+
+async def enqueue_operational_info(operational_info: OperationalInfo) -> None:
+    """
+    Stores the given operational info in the queue that will later
+     be processed by the celery workers.
+    :param operational_info: The operational info to be stored.
+    """
+    await managers.analytics_redis.rpush(
+        config.OPERATIONAL_INFO_QUEUE_KEY, json.dumps(operational_info.to_dict())
+    )

@@ -32,13 +32,13 @@ services:
     build:
       <<: *common-build
       target: api
-  beat_exposure_payload:
+  beat:
     <<: *common-service
     image: beat
     build:
       <<: *common-build
       target: beat
-  worker_autorization:
+  worker_authorization:
     <<: *common-service
     environment:
       <<: *common-environment
@@ -47,20 +47,11 @@ services:
     build:
       <<: *common-build
       target: worker
-  worker_exposure_payload:
+  worker_scheduled:
     <<: *common-service
     environment:
       <<: *common-environment
-      CELERY_APP_NAME: "exposure_payload"
-    image: worker
-    build:
-      <<: *common-build
-      target: worker
-  worker_operational_info:
-    <<: *common-service
-    environment:
-      <<: *common-environment
-      CELERY_APP_NAME: "operational_info"
+      CELERY_APP_NAME: "scheduled"
     image: worker
     build:
       <<: *common-build
