@@ -93,9 +93,7 @@ async def fetch_device_check_bits(token: str) -> DeviceCheckData:
                 session, url=_DEVICE_CHECK_GET_BITS_URL, json=payload, headers=_generate_headers()
             )
         except BadFormatRequestError:
-            _LOGGER.warning(
-                "The DeviceCheck API returned a 400 error.", extra={"payload": payload}
-            )
+            _LOGGER.warning("The DeviceCheck API returned a 400 error.", extra={"payload": payload})
             raise DeviceCheckApiError()
         except (ClientError, TimeoutError, ServerUnavailableError) as exc:
             _LOGGER.warning("The DeviceCheck API is not available.", extra={"payload": payload})
@@ -129,9 +127,7 @@ async def set_device_check_bits(token: str, *, bit0: bool, bit1: bool) -> None:
                 session, url=_DEVICE_CHECK_SET_BITS_URL, json=payload, headers=_generate_headers()
             )
         except BadFormatRequestError:
-            _LOGGER.warning(
-                "The DeviceCheck API returned a 400 error", extra={"payload": payload}
-            )
+            _LOGGER.warning("The DeviceCheck API returned a 400 error", extra={"payload": payload})
             raise DeviceCheckApiError()
         except (ClientError, TimeoutError, ServerUnavailableError) as exc:
             _LOGGER.warning("The DeviceCheck API is not available.", extra={"payload": payload})

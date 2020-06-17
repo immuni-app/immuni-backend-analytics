@@ -12,7 +12,7 @@
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
 from tenacity import (
@@ -29,28 +29,27 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ServerUnavailableError(ImmuniException):
-    """Raised when the server returns a 5xx error code"""
+    """
+    Raised when the server returns a 5xx error code.
+    """
 
 
 class BadFormatRequestError(ImmuniException):
-    """Raised when the server returns a 4xx error code"""
+    """
+    Raised when the server returns a 4xx error code.
+    """
 
 
-def after_log() -> Callable[[RetryCallState], None]:
-    """After call strategy that logs the finished attempt"""
-
-    def log_it(retry_state: RetryCallState) -> None:
-        """Logs the error and the attempt"""
-        exc = retry_state.outcome.exception() if retry_state.outcome is not None else None
-        url = retry_state.kwargs.get("url")
-        _LOGGER.warning(
-            "Failed HTTP request.",
-            extra=dict(
-                exc=exc, request_args=retry_state, request_kwargs=retry_state.kwargs, url=url
-            ),
-        )
-
-    return log_it
+def after_retry_callback(retry_state: RetryCallState) -> None:
+    """
+    Callback to execute after each retry attempt.
+    """
+    exc = retry_state.outcome.exception() if retry_state.outcome is not None else None
+    url = retry_state.kwargs.get("url")
+    _LOGGER.warning(
+        "Failed HTTP request.",
+        extra=dict(exc=exc, request_args=retry_state, request_kwargs=retry_state.kwargs, url=url),
+    )
 
 
 @retry(
@@ -59,7 +58,7 @@ def after_log() -> Callable[[RetryCallState], None]:
     ),  # type: ignore
     wait=wait_exponential(multiplier=1, min=2, max=10),  # type: ignore
     stop=stop_after_attempt(3),  # type: ignore
-    after=after_log(),
+    after=after_retry_callback,
 )
 async def post_with_retry(
     session: ClientSession, *, url: str, json: Dict[str, Any], headers: Dict[str, str]
