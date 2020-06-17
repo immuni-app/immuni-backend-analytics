@@ -13,7 +13,6 @@
 import asyncio
 import json
 import logging
-from typing import Any, Dict
 
 from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
@@ -38,14 +37,18 @@ async def _store_operational_info() -> None:
 
     _LOGGER.info("Store operational info periodic task started.")
     pipe = managers.analytics_redis.pipeline()
-    pipe.lrange(config.OPERATIONAL_INFO_QUEUE_KEY, 0, config.OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS - 1)
+    pipe.lrange(
+        config.OPERATIONAL_INFO_QUEUE_KEY, 0, config.OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS - 1
+    )
     pipe.ltrim(config.OPERATIONAL_INFO_QUEUE_KEY, config.OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS, -1)
     operational_info_list = (await pipe.execute())[0]
 
     operational_info_documents = [
         OperationalInfo.from_dict(json.loads(element)) for element in operational_info_list
     ]
-    OperationalInfo.objects.insert(operational_info_documents)
+
+    if operational_info_documents:
+        OperationalInfo.objects.insert(operational_info_documents)
 
     queue_length = await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY)
     _LOGGER.info(
