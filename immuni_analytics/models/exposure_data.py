@@ -15,13 +15,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import asdict
-from datetime import datetime
 from typing import Any, Dict
 
-from bson import ObjectId
 from mongoengine import (
     DateField,
-    Document,
     EmbeddedDocument,
     EmbeddedDocumentListField,
     IntField,
@@ -30,6 +27,7 @@ from mongoengine import (
     ValidationError,
 )
 
+from immuni_analytics.models.data_retention_document import DataRetentionDocument
 from immuni_common.models.enums import TransmissionRiskLevel
 from immuni_common.models.marshmallow.schemas import ExposureDetectionSummarySchema
 from immuni_common.models.mongoengine.enum_field import EnumField
@@ -63,7 +61,7 @@ class ExposureDetectionSummary(EmbeddedDocument):
     exposure_info = EmbeddedDocumentListField(ExposureInfo, required=False, default=[])
 
 
-class ExposurePayload(Document):
+class ExposurePayload(DataRetentionDocument):
     """
     Embedded document representing the payload of the ingested data.
     """
@@ -104,18 +102,4 @@ class ExposurePayload(Document):
                     for e in exposure_detection_summaries
                 ],
             }
-        )
-
-    @classmethod
-    def delete_older_than(cls, reference_date: datetime) -> None:
-        """
-        Delete all objects older than the given datetime.
-        :param reference_date: the datetime to check against.
-        """
-        objects = cls.objects.filter(id__lte=ObjectId.from_datetime(reference_date))
-        count = objects.delete()
-
-        _LOGGER.info(
-            "ExposurePayload documents deletion completed.",
-            extra={"n_deleted": count, "created_before": reference_date.isoformat()},
         )
