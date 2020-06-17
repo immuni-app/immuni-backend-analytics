@@ -21,7 +21,7 @@ from mongoengine import Document
 _LOGGER = logging.getLogger(__name__)
 
 
-class RetentionPolicyCompliantDocument(Document):
+class AnalyticsDocument(Document):
     """
     Document base class providing a method to comply with the data retention policy.
     """

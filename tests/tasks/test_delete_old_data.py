@@ -24,7 +24,7 @@ from immuni_analytics.models.exposure_data import ExposurePayload
 
 
 @patch("immuni_analytics.celery.scheduled.tasks.delete_old_data._LOGGER.info")
-@patch("immuni_analytics.models.data_retention_document._LOGGER.info")
+@patch("immuni_analytics.models.analytics_document._LOGGER.info")
 async def test_delete_old_data(
     model_logger_info: MagicMock,
     task_logger_info: MagicMock,
