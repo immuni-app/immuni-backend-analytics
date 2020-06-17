@@ -13,7 +13,7 @@
 
 import base64
 from http import HTTPStatus
-from typing import Dict, Any
+from typing import Any, Dict
 from unittest.mock import patch
 
 from pytest import mark
@@ -33,7 +33,7 @@ ANALYTICS_TOKEN = (
     "f93be3e8c09b3727d79287a92945633148e867eb762"
 )
 
-TOKEN_BODY ={
+TOKEN_BODY = {
     "analytics_token": ANALYTICS_TOKEN,
     "device_token": base64.b64encode("test".encode("utf-8")).decode("utf-8"),
 }
@@ -41,10 +41,7 @@ TOKEN_BODY ={
 
 async def test_apple_token(client: TestClient) -> None:
     with patch("immuni_analytics.apis.analytics.authorize_analytics_token.delay"):
-        response = await client.post(
-            "/v1/analytics/apple/token",
-            json=TOKEN_BODY,
-        )
+        response = await client.post("/v1/analytics/apple/token", json=TOKEN_BODY,)
 
         await _add_analytics_token_to_redis(ANALYTICS_TOKEN)
 
@@ -74,18 +71,12 @@ async def test_apple_token(client: TestClient) -> None:
 
 
 @mark.parametrize(
-    "bad_data",
-    [
-        {k: v for k, v in TOKEN_BODY.items() if k != excluded}
-        for excluded in TOKEN_BODY
-    ],
+    "bad_data", [{k: v for k, v in TOKEN_BODY.items() if k != excluded} for excluded in TOKEN_BODY],
 )
 async def test_google_operational_info_bad_request(
     client: TestClient, bad_data: Dict[str, Any]
 ) -> None:
-    response = await client.post(
-        "/v1/analytics/apple/token", json=bad_data
-    )
+    response = await client.post("/v1/analytics/apple/token", json=bad_data)
 
     assert response.status == 400
     data = await response.json()

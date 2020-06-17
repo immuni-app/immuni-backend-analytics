@@ -37,6 +37,7 @@ OPERATIONAL_INFO = {
     "last_risky_exposure_on": "2020-06-15",
 }
 
+
 @fixture
 def operational_info() -> Dict[str, Any]:
     return deepcopy(OPERATIONAL_INFO)
@@ -145,10 +146,7 @@ async def test_apple_operational_info_dummy(
 
 @mark.parametrize(
     "bad_data",
-    [
-        {k: v for k, v in OPERATIONAL_INFO.items() if k != excluded}
-        for excluded in OPERATIONAL_INFO
-    ],
+    [{k: v for k, v in OPERATIONAL_INFO.items() if k != excluded} for excluded in OPERATIONAL_INFO],
 )
 async def test_apple_operational_info_bad_request(
     client: TestClient, bad_data: Dict[str, Any], headers: Dict[str, str]
