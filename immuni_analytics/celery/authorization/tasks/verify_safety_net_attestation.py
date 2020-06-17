@@ -14,7 +14,7 @@ import asyncio
 import logging
 from typing import Any, Dict
 
-from aioredis.commands import StringCommandsMixin
+from aioredis.commands.string import StringCommandsMixin
 
 from immuni_analytics.celery.authorization.app import celery_app
 from immuni_analytics.core import config

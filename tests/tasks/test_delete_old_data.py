@@ -13,7 +13,7 @@
 
 from datetime import datetime, timedelta
 from typing import Callable
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from celery import Celery
 from freezegun import freeze_time
@@ -24,7 +24,7 @@ from immuni_analytics.models.exposure_data import ExposurePayload
 
 
 @patch("immuni_analytics.celery.scheduled.tasks.delete_old_data._LOGGER.info")
-@patch("immuni_analytics.models.exposure_data._LOGGER.info")
+@patch("immuni_analytics.models.analytics_document._LOGGER.info")
 async def test_delete_old_data(
     model_logger_info: MagicMock,
     task_logger_info: MagicMock,
@@ -45,14 +45,33 @@ async def test_delete_old_data(
 
             assert ExposurePayload.objects.count() == 10
         task_logger_info.assert_called_once_with("Data deletion started.")
-        model_logger_info.assert_called_once_with(
-            "ExposurePayload documents deletion completed.",
-            extra={
-                "n_deleted": 15,
-                "created_before": (
-                    reference_date
-                    + timedelta(seconds=1)
-                    - timedelta(days=config.DATA_RETENTION_DAYS)
-                ).isoformat(),
-            },
+        assert model_logger_info.call_count == 2
+        model_logger_info.assert_has_calls(
+            (
+                call(
+                    "%s documents deletion completed.",
+                    "ExposurePayload",
+                    extra={
+                        "n_deleted": 15,
+                        "created_before": (
+                            reference_date
+                            + timedelta(seconds=1)
+                            - timedelta(days=config.DATA_RETENTION_DAYS)
+                        ).isoformat(),
+                    },
+                ),
+                call(
+                    "%s documents deletion completed.",
+                    "OperationalInfo",
+                    extra={
+                        "n_deleted": 0,  # TODO: create documents to delete.
+                        "created_before": (
+                            reference_date
+                            + timedelta(seconds=1)
+                            - timedelta(days=config.DATA_RETENTION_DAYS)
+                        ).isoformat(),
+                    },
+                ),
+            ),
+            any_order=False,
         )
