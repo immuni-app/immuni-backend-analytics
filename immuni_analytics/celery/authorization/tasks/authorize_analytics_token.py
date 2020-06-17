@@ -48,9 +48,9 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
         #  The "waiting for a random time" is not a security/cryptographic action, thus the issue is
         #  intentionally waived.
         await _first_step(device_token)
-        await asyncio.sleep(random.uniform(1, config.CHECK_TIME))  # nosec
+        await asyncio.sleep(random.uniform(1, config.CHECK_TIME_SECONDS))  # nosec
         await _second_step(device_token)
-        await asyncio.sleep(random.uniform(1, config.READ_TIME))  # nosec
+        await asyncio.sleep(random.uniform(1, config.READ_TIME_SECONDS))  # nosec
         await _third_step(device_token)
     except DiscardAnalyticsTokenException:
         return
