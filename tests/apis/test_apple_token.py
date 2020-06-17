@@ -13,13 +13,14 @@
 
 import base64
 from http import HTTPStatus
+from typing import Dict, Any
 from unittest.mock import patch
 
+from pytest import mark
 from pytest_sanic.utils import TestClient
 
 from immuni_analytics.celery.authorization.tasks.authorize_analytics_token import (
     _add_analytics_token_to_redis,
-    _authorize_analytics_token,
 )
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.redis import (
@@ -32,15 +33,17 @@ ANALYTICS_TOKEN = (
     "f93be3e8c09b3727d79287a92945633148e867eb762"
 )
 
+TOKEN_BODY ={
+    "analytics_token": ANALYTICS_TOKEN,
+    "device_token": base64.b64encode("test".encode("utf-8")).decode("utf-8"),
+}
+
 
 async def test_apple_token(client: TestClient) -> None:
     with patch("immuni_analytics.apis.analytics.authorize_analytics_token.delay"):
         response = await client.post(
             "/v1/analytics/apple/token",
-            json={
-                "analytics_token": ANALYTICS_TOKEN,
-                "device_token": base64.b64encode("test".encode("utf-8")).decode("utf-8"),
-            },
+            json=TOKEN_BODY,
         )
 
         await _add_analytics_token_to_redis(ANALYTICS_TOKEN)
@@ -68,3 +71,22 @@ async def test_apple_token(client: TestClient) -> None:
     )
 
     assert response.status == HTTPStatus.CREATED.value
+
+
+@mark.parametrize(
+    "bad_data",
+    [
+        {k: v for k, v in TOKEN_BODY.items() if k != excluded}
+        for excluded in TOKEN_BODY
+    ],
+)
+async def test_google_operational_info_bad_request(
+    client: TestClient, bad_data: Dict[str, Any]
+) -> None:
+    response = await client.post(
+        "/v1/analytics/apple/token", json=bad_data
+    )
+
+    assert response.status == 400
+    data = await response.json()
+    assert data["message"] == "Request not compliant with the defined schema."

@@ -10,12 +10,12 @@
 #   GNU Affero General Public License for more details.
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
-
+from copy import deepcopy
 from datetime import date
 from http import HTTPStatus
 from typing import Any, Dict
 
-from pytest import fixture
+from pytest import fixture, mark
 from pytest_sanic.utils import TestClient
 
 from immuni_analytics.core.managers import managers
@@ -28,17 +28,18 @@ ANALYTICS_TOKEN = (
     "eecb11bfe62a34cc0798f95d8842124814c24f53ff"
 )
 
+OPERATIONAL_INFO = {
+    "province": "CH",
+    "exposure_permission": 0,
+    "bluetooth_active": 1,
+    "notification_permission": 1,
+    "exposure_notification": 1,
+    "last_risky_exposure_on": "2020-06-15",
+}
 
 @fixture
 def operational_info() -> Dict[str, Any]:
-    return {
-        "province": "CH",
-        "exposure_permission": 0,
-        "bluetooth_active": 1,
-        "notification_permission": 1,
-        "exposure_notification": 1,
-        "last_risky_exposure_on": "2020-06-15",
-    }
+    return deepcopy(OPERATIONAL_INFO)
 
 
 @fixture
@@ -128,3 +129,36 @@ async def test_apple_operational_info_without_exposure(
     )
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 1
+
+
+async def test_apple_operational_info_dummy(
+    client: TestClient, operational_info: Dict[str, Any], headers: Dict[str, str]
+) -> None:
+    headers["Immuni-Dummy-Data"] = "1"
+    response = await client.post(
+        "/v1/analytics/apple/operational-info", json=operational_info, headers=headers,
+    )
+
+    assert response.status == HTTPStatus.NO_CONTENT.value
+    assert OperationalInfo.objects.count() == 0
+
+
+@mark.parametrize(
+    "bad_data",
+    [
+        {k: v for k, v in OPERATIONAL_INFO.items() if k != excluded}
+        for excluded in OPERATIONAL_INFO
+    ],
+)
+async def test_apple_operational_info_bad_request(
+    client: TestClient, bad_data: Dict[str, Any], headers: Dict[str, str]
+) -> None:
+    response = await client.post(
+        "/v1/analytics/apple/operational-info", json=bad_data, headers=headers
+    )
+
+    assert response.status == 400
+    data = await response.json()
+    assert data["message"] == "Request not compliant with the defined schema."
+
+    assert OperationalInfo.objects.count() == 0
