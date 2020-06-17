@@ -32,13 +32,13 @@ services:
     build:
       <<: *common-build
       target: api
-  beat_exposure_payload:
+  beat:
     <<: *common-service
     image: beat
     build:
       <<: *common-build
       target: beat
-  worker_autorization:
+  worker_authorization:
     <<: *common-service
     environment:
       <<: *common-environment
