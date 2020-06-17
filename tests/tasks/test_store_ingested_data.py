@@ -36,7 +36,7 @@ async def test_ingest_data(
 ) -> None:
     with patch(
         "immuni_analytics.celery.scheduled.tasks.store_exposure_payloads.config."
-        "MAX_INGESTED_ELEMENTS",
+        "EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS",
         max_ingested_elements,
     ):
         if n_elements > 0:
@@ -48,10 +48,10 @@ async def test_ingest_data(
 
         await _store_exposure_payloads()
 
-        ingested_data = min(n_elements, config.MAX_INGESTED_ELEMENTS)
+        ingested_data = min(n_elements, config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
 
         assert ExposurePayload.objects.count() == ingested_data
-        remaining_elements = max(0, n_elements - config.MAX_INGESTED_ELEMENTS)
+        remaining_elements = max(0, n_elements - config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
@@ -75,7 +75,7 @@ async def test_json_error(
     logger_warning: MagicMock,
     generate_redis_data: Callable[..., Dict[str, Any]],
 ) -> None:
-    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 2):
+    with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 2):
         await managers.analytics_redis.rpush(
             config.EXPOSURE_PAYLOAD_QUEUE_KEY,
             "non_json_string",
@@ -112,7 +112,7 @@ async def test_validation_error(
     logger_warning: MagicMock,
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
-    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 2):
+    with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 2):
         redis_data = generate_redis_data(length=3)
         redis_data[0]["payload"]["exposure_detection_summaries"][0]["date"] = "2020-11-123"
 
@@ -150,7 +150,7 @@ async def test_wrong_exposure_data_error(
     logger_warning: MagicMock,
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
-    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 5):
+    with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 5):
         redis_data = generate_redis_data(length=5)
         del redis_data[0]["version"]
         redis_data[1]["version"] = 2
@@ -192,7 +192,7 @@ async def test_empty_exposure_info_summary(
     logger_warning: MagicMock,
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
-    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 1):
+    with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 1):
         redis_data = generate_redis_data(length=1)
         redis_data[0]["payload"]["exposure_detection_summaries"] = []
 
@@ -228,7 +228,7 @@ async def test_empty_exposure_info(
     logger_warning: MagicMock,
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
-    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 1):
+    with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 1):
         redis_data = generate_redis_data(length=1)
         redis_data[0]["payload"]["exposure_detection_summaries"][0]["exposure_info"] = []
 
@@ -264,7 +264,7 @@ async def test_missing_symptoms_started_on(
     logger_warning: MagicMock,
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
-    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 1):
+    with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 1):
         redis_data = generate_redis_data(length=1)
         del redis_data[0]["payload"]["symptoms_started_on"]
 
@@ -302,7 +302,7 @@ async def test_wrong_symptoms_started_on(
     value: Any,
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
-    with patch("immuni_analytics.core.config.MAX_INGESTED_ELEMENTS", 5):
+    with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 5):
         redis_data = generate_redis_data(length=1)
         redis_data[0]["payload"]["symptoms_started_on"] = value
 

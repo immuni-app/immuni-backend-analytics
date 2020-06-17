@@ -47,8 +47,8 @@ async def _store_exposure_payloads() -> None:
     """
     _LOGGER.info("Store exposure payload periodic task started.")
     pipe = managers.analytics_redis.pipeline()
-    pipe.lrange(config.EXPOSURE_PAYLOAD_QUEUE_KEY, 0, config.MAX_INGESTED_ELEMENTS - 1)
-    pipe.ltrim(config.EXPOSURE_PAYLOAD_QUEUE_KEY, config.MAX_INGESTED_ELEMENTS, -1)
+    pipe.lrange(config.EXPOSURE_PAYLOAD_QUEUE_KEY, 0, config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS - 1)
+    pipe.ltrim(config.EXPOSURE_PAYLOAD_QUEUE_KEY, config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS, -1)
     ingested_data = (await pipe.execute())[0]
 
     bad_format_data = []

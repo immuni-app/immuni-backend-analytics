@@ -26,7 +26,6 @@ _LOGGER = logging.getLogger(__name__)
 ANALYTICS_MONGO_URL = config(
     "ANALYTICS_MONGO_URL", default="mongodb://localhost:27017/immuni-analytics-dev"
 )
-
 ANALYTICS_BROKER_REDIS_URL: str = config(
     "ANALYTICS_BROKER_REDIS_URL", default="redis://localhost:6379/1"
 )
@@ -66,15 +65,16 @@ APPLE_DEVICE_CHECK_URL: str = config(
 )
 APPLE_KEY_ID: str = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
+CHECK_TIME: int = config("CHECK_TIME", cast=int, default=7)
 DATA_RETENTION_DAYS: int = config("DATA_RETENTION_DAYS", cast=int, default=30)
 DEVICE_TOKEN_MAX_LENGTH: int = config("DEVICE_TOKEN_MAX_LENGTH", cast=int, default=10_000)
-MAX_INGESTED_ELEMENTS: int = config("MAX_INGESTED_ELEMENTS", cast=int, default=100)
-CHECK_TIME: int = config("CHECK_TIME", cast=int, default=7)
 DELETE_OLD_DATA_PERIODICITY: str = config(
     "DELETE_OLD_DATA_PERIODICITY",
     cast=validate_crontab("DELETE_OLD_DATA_PERIODICITY"),
     default="0 0 * * *",
 )
+EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS: int = config("EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", cast=int, default=100)
+OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS: int = config("OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS", cast=int, default=100)
 READ_TIME: int = config("READ_TIME", cast=int, default=3)
 SAFETY_NET_MAX_SKEW_MINUTES: int = config("SAFETY_NET_MAX_SKEW_MINUTES", cast=int, default=10)
 STORE_INGESTED_DATA_PERIODICITY: str = config(

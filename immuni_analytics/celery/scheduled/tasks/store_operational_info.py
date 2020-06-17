@@ -38,8 +38,8 @@ async def _store_operational_info() -> None:
 
     _LOGGER.info("Store operational info periodic task started.")
     pipe = managers.analytics_redis.pipeline()
-    pipe.lrange(config.OPERATIONAL_INFO_QUEUE_KEY, 0, config.MAX_INGESTED_ELEMENTS - 1)
-    pipe.ltrim(config.OPERATIONAL_INFO_QUEUE_KEY, config.MAX_INGESTED_ELEMENTS, -1)
+    pipe.lrange(config.OPERATIONAL_INFO_QUEUE_KEY, 0, config.OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS - 1)
+    pipe.ltrim(config.OPERATIONAL_INFO_QUEUE_KEY, config.OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS, -1)
     operational_info_list = (await pipe.execute())[0]
 
     operational_info_documents = [
@@ -49,7 +49,7 @@ async def _store_operational_info() -> None:
 
     queue_length = await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY)
     _LOGGER.info(
-        "Store exposure payload periodic task completed.",
+        "Store operational info periodic task completed.",
         extra={
             "stored_data": len(operational_info_documents),
             "operational_info_queue_length": queue_length,
