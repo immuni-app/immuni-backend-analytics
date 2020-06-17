@@ -14,6 +14,7 @@
 import logging
 from datetime import date
 from http import HTTPStatus
+from typing import Any
 
 from marshmallow import fields
 from marshmallow.validate import Length, Regexp
@@ -31,7 +32,7 @@ from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation i
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
-from immuni_analytics.helpers.api import allows_dummy_requests
+from immuni_analytics.helpers.api import allows_dummy_requests, inject_operational_info
 from immuni_analytics.helpers.redis import (
     enqueue_operational_info,
     get_authorized_tokens_redis_key_current_month,
@@ -45,14 +46,14 @@ from immuni_analytics.models.swagger import (
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import json_response, validate
 from immuni_common.helpers.swagger import doc_exception
-from immuni_common.models.enums import Location, Platform
+from immuni_common.models.enums import Location
 from immuni_common.models.marshmallow.fields import (
     Base64String,
     IntegerBoolField,
     IsoDate,
     Province,
 )
-from immuni_common.models.swagger import HeaderImmuniContentTypeJson, HeaderImmuniDummyData
+from immuni_common.models.swagger import HeaderImmuniContentTypeJson
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,46 +87,23 @@ bp = Blueprint("analytics", url_prefix="analytics")
     last_risky_exposure_on=IsoDate(),
 )
 @allows_dummy_requests
-async def post_operational_info(  # pylint: disable=too-many-arguments
-    request: Request,
-    province: str,
-    exposure_permission: bool,
-    bluetooth_active: bool,
-    notification_permission: bool,
-    exposure_notification: bool,
-    last_risky_exposure_on: date,
+@inject_operational_info
+async def post_operational_info(
+    request: Request, operational_info: OperationalInfoDocument, **kwargs: Any
 ) -> HTTPResponse:
     """
     Check if the analytics_token is authorized and save the operational data
     in compliance with the rate limiting policy.
 
     :param request: the HTTP request object.
-    :param is_dummy: whether the uploaded data is dummy or not.
-    :param province: the user's province of residence.
-    :param exposure_permission: whether the user has granted the App permission to use the
-     Exposure Notifications framework.
-    :param bluetooth_active: whether the user has Bluetooth turned on.
-    :param notification_permission: whether the user has granted the App permission to display
-     notifications.
-    :param exposure_notification: whether the user was notified of a Risky Exposure after the
-     last Exposure Detection.
-    :param last_risky_exposure_on: the date on which the last Risky Exposure took place, if any.
+    :param operational_info: The operational information to be saved.
     :return: 204 in any case.
     """
     if await managers.analytics_redis.srem(
-        get_authorized_tokens_redis_key_current_month(exposure_notification), request.token
+        get_authorized_tokens_redis_key_current_month(operational_info.exposure_notification),
+        request.token,
     ):
-        await enqueue_operational_info(
-            OperationalInfoDocument(
-                platform=Platform.IOS,
-                province=province,
-                exposure_permission=exposure_permission,
-                bluetooth_active=bluetooth_active,
-                notification_permission=notification_permission,
-                exposure_notification=exposure_notification,
-                last_risky_exposure_on=last_risky_exposure_on if exposure_notification else None,
-            )
-        )
+        await enqueue_operational_info(operational_info)
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
@@ -200,31 +178,21 @@ async def authorize_token(
     ),
 )
 @allows_dummy_requests
-async def post_android_operational_info(  # pylint: disable=too-many-arguments
+@inject_operational_info
+async def post_android_operational_info(
     request: Request,
-    province: str,
-    exposure_permission: bool,
-    bluetooth_active: bool,
-    notification_permission: bool,
-    exposure_notification: bool,
-    last_risky_exposure_on: date,
+    operational_info: OperationalInfoDocument,
     salt: str,
     signed_attestation: str,
+    last_risky_exposure_on: date,
+    **kwargs: Any,
 ) -> HTTPResponse:
     """
     Check if the signed attestation is valid and the salt has not been used
     recently. In case of success save the operational_info.
 
     :param request: the HTTP request object.
-    :param is_dummy: whether the uploaded data is dummy or not.
-    :param province: the user's province of residence.
-    :param exposure_permission: whether the user has granted the App permission to use the
-     Exposure Notifications framework.
-    :param bluetooth_active: whether the user has Bluetooth turned on.
-    :param notification_permission: whether the user has granted the App permission to display
-     notifications.
-    :param exposure_notification: whether the user was notified of a Risky Exposure after the
-     last Exposure Detection.
+    :param operational_info: The operational information to be saved.
     :param last_risky_exposure_on: the date on which the last Risky Exposure took place, if any.
     :param salt: a random string sent by the client to prevent replay attacks.
     :param signed_attestation: the payload generated by Google SafetyNet attestation API.
@@ -237,18 +205,8 @@ async def post_android_operational_info(  # pylint: disable=too-many-arguments
         )
         return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
-    operational_info = OperationalInfoDocument(
-        platform=Platform.ANDROID,
-        province=province,
-        exposure_permission=exposure_permission,
-        bluetooth_active=bluetooth_active,
-        notification_permission=notification_permission,
-        exposure_notification=exposure_notification,
-        last_risky_exposure_on=last_risky_exposure_on if exposure_notification else None,
-    )
-
     verify_safety_net_attestation.delay(
-        signed_attestation, salt, operational_info.to_dict(), last_risky_exposure_on.isoformat()
+        signed_attestation, salt, operational_info.to_dict(), last_risky_exposure_on.isoformat(),
     )
 
     return json_response(body=None, status=HTTPStatus.NO_CONTENT)
