@@ -55,9 +55,9 @@ async def test_ingest_data(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={
                         "ingested_data": ingested_data,
                         "ingestion_queue_length": remaining_elements,
@@ -92,9 +92,9 @@ async def test_json_error(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={"ingested_data": 1, "ingestion_queue_length": 2},
                 ),
             ],
@@ -130,9 +130,9 @@ async def test_validation_error(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={"ingested_data": 1, "ingestion_queue_length": 1},
                 ),
             ],
@@ -172,9 +172,9 @@ async def test_wrong_exposure_data_error(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={"ingested_data": 0, "ingestion_queue_length": 0},
                 ),
             ],
@@ -210,9 +210,9 @@ async def test_empty_exposure_info_summary(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={"ingested_data": 1, "ingestion_queue_length": 0},
                 ),
             ],
@@ -246,9 +246,9 @@ async def test_empty_exposure_info(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={"ingested_data": 1, "ingestion_queue_length": 0},
                 ),
             ],
@@ -282,9 +282,9 @@ async def test_missing_symptoms_started_on(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={"ingested_data": 1, "ingestion_queue_length": 0},
                 ),
             ],
@@ -320,9 +320,9 @@ async def test_wrong_symptoms_started_on(
         assert logger_info.call_count == 2
         logger_info.assert_has_calls(
             [
-                call("Data ingestion started."),
+                call("Store exposure payload periodic task started."),
                 call(
-                    "Data ingestion completed.",
+                    "Store exposure payload periodic task completed.",
                     extra={"ingested_data": 0, "ingestion_queue_length": 0},
                 ),
             ],

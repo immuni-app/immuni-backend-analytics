@@ -82,6 +82,11 @@ STORE_INGESTED_DATA_PERIODICITY: str = config(
     cast=validate_crontab("STORE_INGESTED_DATA_PERIODICITY"),
     default="* * * * *",
 )
+STORE_OPERATIONAL_INFO_PERIODICITY: str = config(
+    "STORE_OPERATIONAL_INFO_PERIODICITY",
+    cast=validate_crontab("STORE_OPERATIONAL_INFO_PERIODICITY"),
+    default="* * * * *",
+)
 SAFETY_NET_APK_DIGEST: str = config("SAFETY_NET_APK_DIGEST", default="")
 SAFETY_NET_ISSUER_HOSTNAME: str = config("SAFETY_NET_ISSUER_HOSTNAME", default="attest.android.com")
 SAFETY_NET_PACKAGE_NAME: str = config(

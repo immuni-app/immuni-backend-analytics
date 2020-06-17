@@ -45,7 +45,7 @@ async def _store_exposure_payloads() -> None:
     Retrieve up to a fixed number of exposure payload data and save it into mongo.
     If something goes wrong, push the data into the error queue.
     """
-    _LOGGER.info("Data ingestion started.")
+    _LOGGER.info("Store exposure payload periodic task started.")
     pipe = managers.analytics_redis.pipeline()
     pipe.lrange(config.EXPOSURE_PAYLOAD_QUEUE_KEY, 0, config.MAX_INGESTED_ELEMENTS - 1)
     pipe.ltrim(config.EXPOSURE_PAYLOAD_QUEUE_KEY, config.MAX_INGESTED_ELEMENTS, -1)
@@ -78,7 +78,7 @@ async def _store_exposure_payloads() -> None:
 
     queue_length = await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_QUEUE_KEY)
     _LOGGER.info(
-        "Data ingestion completed.",
+        "Store exposure payload periodic task completed.",
         extra={"ingested_data": len(exposure_data), "ingestion_queue_length": queue_length},
     )
 

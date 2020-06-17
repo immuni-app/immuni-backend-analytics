@@ -31,17 +31,24 @@ def _get_schedules() -> Tuple[Schedule, ...]:
     :return: the tuple of tasks schedules.
     """
 
+    from immuni_analytics.celery.scheduled.tasks.delete_old_data import delete_old_data
     from immuni_analytics.celery.scheduled.tasks.store_exposure_payloads import (
         store_exposure_payloads,
     )
-    from immuni_analytics.celery.scheduled.tasks.delete_old_data import delete_old_data
+    from immuni_analytics.celery.scheduled.tasks.store_operational_info import (
+        store_operational_info,
+    )
 
     return (
+        Schedule(task=delete_old_data, when=string_to_crontab(config.DELETE_OLD_DATA_PERIODICITY)),
         Schedule(
             task=store_exposure_payloads,
             when=string_to_crontab(config.STORE_INGESTED_DATA_PERIODICITY),
         ),
-        Schedule(task=delete_old_data, when=string_to_crontab(config.DELETE_OLD_DATA_PERIODICITY),),
+        Schedule(
+            task=store_operational_info,
+            when=string_to_crontab(config.STORE_OPERATIONAL_INFO_PERIODICITY),
+        ),
     )
 
 
@@ -68,7 +75,7 @@ def worker_process_shutdown_listener_exposure_payload(**kwargs: Any) -> None:  #
 
 
 celery_app = CeleryApp(
-    service_dir_name="immuni_analytics.celery.exposure_payload",
+    service_dir_name="immuni_analytics.celery.scheduled",
     broker_redis_url=config.CELERY_BROKER_REDIS_URL_SCHEDULED,
     always_eager=config.CELERY_ALWAYS_EAGER,
     schedules_function=_get_schedules,
