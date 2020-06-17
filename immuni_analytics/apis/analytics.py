@@ -51,7 +51,7 @@ from immuni_common.models.marshmallow.fields import (
     IsoDate,
     Province,
 )
-from immuni_common.models.swagger import HeaderImmuniContentTypeJson
+from immuni_common.models.swagger import HeaderImmuniContentTypeJson, HeaderImmuniDummyData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ bp = Blueprint("analytics", url_prefix="analytics")
     "Check if the analytics_token is authorized to upload and save the operational info"
     " in the database."
 )
-@doc.consumes(doc.Boolean(name="Immuni-Dummy-Data", required=True), location="headers")
+@doc.consumes(HeaderImmuniDummyData(), location="header", required=True)
 @doc.consumes(AppleOperationalInfo, location="body")
 @doc.consumes(HeaderImmuniContentTypeJson(), location="header", required=True)
 @doc.consumes(
@@ -79,10 +79,7 @@ bp = Blueprint("analytics", url_prefix="analytics")
 @validate(
     location=Location.HEADERS,
     is_dummy=IntegerBoolField(
-        required=True,
-        data_key="Immuni-Dummy-Data",
-        allow_strings=True,
-        description="Whether the current request is a dummy request. Dummy requests are ignored.",
+        required=True, allow_strings=True, data_key=HeaderImmuniDummyData.DATA_KEY,
     ),
 )
 @validate(
@@ -191,7 +188,7 @@ async def authorize_token(
     "Check if the signed attestation is genuine and save the operational information in "
     "the database."
 )
-@doc.consumes(doc.Boolean(name="Immuni-Dummy-Data", required=True), location="header")
+@doc.consumes(HeaderImmuniDummyData(), location="header", required=True)
 @doc.consumes(HeaderImmuniContentTypeJson(), location="header", required=True)
 @doc.consumes(GoogleOperationalInfo, location="body")
 @doc_exception(SchemaValidationException)
@@ -201,10 +198,7 @@ async def authorize_token(
 @validate(
     location=Location.HEADERS,
     is_dummy=IntegerBoolField(
-        required=True,
-        data_key="Immuni-Dummy-Data",
-        allow_strings=True,
-        description="Whether the current request is a dummy request. Dummy requests are ignored.",
+        required=True, allow_strings=True, data_key=HeaderImmuniDummyData.DATA_KEY,
     ),
 )
 @validate(
