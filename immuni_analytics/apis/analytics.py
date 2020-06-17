@@ -85,7 +85,7 @@ bp = Blueprint("analytics", url_prefix="analytics")
     exposure_notification=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
 )
-@allows_dummy_requests()
+@allows_dummy_requests
 async def post_operational_info(  # pylint: disable=too-many-arguments
     request: Request,
     province: str,
@@ -199,7 +199,7 @@ async def authorize_token(
         required=True, validate=Length(max=config.SIGNED_ATTESTATION_MAX_LENGTH)
     ),
 )
-@allows_dummy_requests()
+@allows_dummy_requests
 async def post_android_operational_info(  # pylint: disable=too-many-arguments
     request: Request,
     province: str,

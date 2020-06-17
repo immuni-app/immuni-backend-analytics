@@ -28,30 +28,24 @@ async def wait_configured_time() -> None:
 
 
 def allows_dummy_requests(
-    response: HTTPResponse = json_response(body=None, status=HTTPStatus.NO_CONTENT)
-) -> Callable:
+    f: Callable[..., Coroutine[Any, Any, HTTPResponse]]
+) -> Callable[..., Coroutine[Any, Any, HTTPResponse]]:
     """
     Decorator that allows handling dummy requests.
-    :param response: The response that dummy requests should return.
     :return: The decorated function.
     """
 
-    def _decorator(
-        f: Callable[..., Coroutine[Any, Any, HTTPResponse]]
-    ) -> Callable[..., Coroutine[Any, Any, HTTPResponse]]:
-        @validate(
-            location=Location.HEADERS,
-            is_dummy=IntegerBoolField(
-                required=True, allow_strings=True, data_key=HeaderImmuniDummyData.DATA_KEY,
-            ),
-        )
-        @doc.consumes(HeaderImmuniDummyData(), location="header", required=True)
-        async def _wrapper(*args: Any, is_dummy: bool, **kwargs: Any) -> HTTPResponse:
-            if is_dummy:
-                await wait_configured_time()
-                return response
-            return await f(*args, **kwargs)
+    @validate(
+        location=Location.HEADERS,
+        is_dummy=IntegerBoolField(
+            required=True, allow_strings=True, data_key=HeaderImmuniDummyData.DATA_KEY,
+        ),
+    )
+    @doc.consumes(HeaderImmuniDummyData(), location="header", required=True)
+    async def _wrapper(*args: Any, is_dummy: bool, **kwargs: Any) -> HTTPResponse:
+        if is_dummy:
+            await wait_configured_time()
+            return json_response(body=None, status=HTTPStatus.NO_CONTENT)
+        return await f(*args, **kwargs)
 
-        return _wrapper
-
-    return _decorator
+    return _wrapper
