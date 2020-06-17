@@ -27,7 +27,9 @@ from mongoengine import (
     ValidationError,
 )
 
-from immuni_analytics.models.data_retention_document import DataRetentionDocument
+from immuni_analytics.models.retention_policy_compliant_document import (
+    RetentionPolicyCompliantDocument,
+)
 from immuni_common.models.enums import TransmissionRiskLevel
 from immuni_common.models.marshmallow.schemas import ExposureDetectionSummarySchema
 from immuni_common.models.mongoengine.enum_field import EnumField
@@ -61,7 +63,7 @@ class ExposureDetectionSummary(EmbeddedDocument):
     exposure_info = EmbeddedDocumentListField(ExposureInfo, required=False, default=[])
 
 
-class ExposurePayload(DataRetentionDocument):
+class ExposurePayload(RetentionPolicyCompliantDocument):
     """
     Embedded document representing the payload of the ingested data.
     """

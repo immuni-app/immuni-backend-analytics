@@ -19,14 +19,16 @@ from typing import Any, Dict, Optional
 
 from mongoengine import BooleanField, DateField, StringField
 
-from immuni_analytics.models.data_retention_document import DataRetentionDocument
+from immuni_analytics.models.retention_policy_compliant_document import (
+    RetentionPolicyCompliantDocument,
+)
 from immuni_common.models.enums import Platform
 from immuni_common.models.mongoengine.enum_field import EnumField
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class OperationalInfo(DataRetentionDocument):
+class OperationalInfo(RetentionPolicyCompliantDocument):
     """
     Model representing the operational information to save in the database.
     """

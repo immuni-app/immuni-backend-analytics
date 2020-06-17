@@ -21,9 +21,9 @@ from mongoengine import Document
 _LOGGER = logging.getLogger(__name__)
 
 
-class DataRetentionDocument(Document):
+class RetentionPolicyCompliantDocument(Document):
     """
-    Document base class providing a method to comply with data retention policy.
+    Document base class providing a method to comply with the data retention policy.
     """
 
     meta: Dict[str, Any] = dict(allow_inheritance=True)
@@ -32,6 +32,7 @@ class DataRetentionDocument(Document):
     def delete_older_than(cls, reference_date: datetime) -> None:
         """
         Delete all objects older than the given datetime.
+
         :param reference_date: the datetime to check against.
         """
         objects = cls.objects.filter(id__lte=ObjectId.from_datetime(reference_date))
