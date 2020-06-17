@@ -145,7 +145,6 @@ async def post_operational_info(  # pylint: disable=too-many-arguments
     "Check if the device_token is genuine and allow the analytics_token to be used as"
     " an authorization token in compliance with the rate limiting policy."
 )
-@doc.consumes(doc.Boolean(name="Immuni-Dummy-Data", required=True), location="headers")
 @doc.consumes(AuthorizationBody, location="body")
 @doc.consumes(HeaderImmuniContentTypeJson(), location="header", required=True)
 @doc_exception(SchemaValidationException)
