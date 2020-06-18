@@ -124,7 +124,7 @@ async def test_authorize_analytics_token_used_in_current_month(
         await _authorize_analytics_token(TEST_ANALYTICS_TOKEN, TEST_DEVICE_TOKEN)
 
     warning_logger.assert_called_once_with(
-        "Found token already used in current month.",
+        "Detected device that already authorized an analytics_token in the current month.",
         extra=dict(
             env=config.ENV.value,
             bit0=first_read_data.bit0,

@@ -78,7 +78,7 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
 
 async def _first_step(device_token: str) -> None:
     """
-    Fetch the DeviceCheck bits and ensure the configuration is expected.
+    Fetch the DeviceCheck bits and ensure the bit configuration is the expected one.
     If not, blacklist the device.
 
     :raises: BlacklistDeviceException if an anomaly is detected,
@@ -90,7 +90,7 @@ async def _first_step(device_token: str) -> None:
     # developer device only once a month.
     if config.ENV == Environment.RELEASE and device_check_data.used_in_current_month:
         _LOGGER.warning(
-            "Found token already used in current month.",
+            "Detected device that already authorized an analytics_token in the current month.",
             extra=dict(
                 env=config.ENV.value,
                 bit0=device_check_data.bit0,
@@ -115,8 +115,8 @@ async def _first_step(device_token: str) -> None:
 
 async def _second_step(device_token: str) -> None:
     """
-    Fetch the DeviceCheck bits and ensure the configuration is expected.
-    If it is, set the bits to (0,1) and return.
+    Fetch the DeviceCheck bits and ensure the bit configuration is the expected one.
+    If it is, set the bits to (False, True) and return.
     If not, blacklist the device.
 
     :raises: BlacklistDeviceException if an anomaly is detected.
@@ -139,7 +139,7 @@ async def _second_step(device_token: str) -> None:
 
 async def _third_step(device_token: str) -> None:
     """
-    Fetch the DeviceCheck bits and ensure the configuration is expected.
+    Fetch the DeviceCheck bits and ensure the bit configuration is the expected one.
     If it is, set the bits to (0,0) and return.
     If not, blacklist the device.
 
@@ -163,7 +163,8 @@ async def _third_step(device_token: str) -> None:
 
 async def _blacklist_device(device_token: str) -> None:
     """
-    Set the both DeviceCheck bits to True, a configuration that marks blacklisted devices.
+    Set the both DeviceCheck bits to True, a configuration that indicates the device is blacklisted
+    and cannot send analytics anymore.
     """
     # Do not blacklist devices if we are not in release environment otherwise we need to
     # manually unlock developer devices
