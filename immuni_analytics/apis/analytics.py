@@ -35,7 +35,9 @@ from immuni_analytics.helpers import safety_net
 from immuni_analytics.helpers.api import allows_dummy_requests, inject_operational_info
 from immuni_analytics.helpers.redis import (
     enqueue_operational_info,
-    is_upload_authorized_for_token, get_upload_authorization_member_for_current_month)
+    get_upload_authorization_member_for_current_month,
+    is_upload_authorized_for_token,
+)
 from immuni_analytics.models.operational_info import OperationalInfo as OperationalInfoDocument
 from immuni_analytics.models.swagger import (
     AppleOperationalInfo,
@@ -99,7 +101,8 @@ async def post_operational_info(
     :return: 204 in any case.
     """
     if await managers.analytics_redis.srem(
-        request.token, get_upload_authorization_member_for_current_month(operational_info.exposure_notification)
+        request.token,
+        get_upload_authorization_member_for_current_month(operational_info.exposure_notification),
     ):
         await enqueue_operational_info(operational_info)
 

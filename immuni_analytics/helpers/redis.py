@@ -43,6 +43,11 @@ def get_upload_authorization_member_for_next_month(with_exposure: bool) -> str:
 
 
 def get_all_authorizations_for_upload() -> List[str]:
+    """
+    Get all the members needed to authorize an analytics token for the current and next month.
+
+    :return: the list of string members.
+    """
     return [
         get_upload_authorization_member_for_current_month(with_exposure=True),
         get_upload_authorization_member_for_current_month(with_exposure=False),
