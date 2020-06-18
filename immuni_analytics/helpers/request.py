@@ -23,6 +23,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from immuni_analytics.core import config
 from immuni_common.core.exceptions import ImmuniException
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,9 +70,11 @@ async def post_with_retry(
     :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError
     :return: the client response if successful.
     """
-    # TODO timeout from config
     async with session.post(
-        url=url, json=json, headers=headers, timeout=ClientTimeout(total=10)
+        url=url,
+        json=json,
+        headers=headers,
+        timeout=ClientTimeout(total=config.REQUESTS_TIMEOUT_SECONDS),
     ) as response:
         if response.status >= 500:
             raise ServerUnavailableError()
