@@ -273,3 +273,23 @@ def test_verify_signature_raises_if_wrong_signature(
     with raises(SafetyNetVerificationError):
         _verify_signature(wrong_attestation_signature, certificates)
     warning_logger.assert_called_once()
+
+
+@patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
+def test_verify_signature_raises_if_wrong_public_key_format(
+    warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
+) -> None:
+    attestation = safety_net_post_body_with_exposure["signed_attestation"]
+    header = _get_jws_header(attestation)
+    certificates = _get_certificates(header)
+
+    with patch(
+        "immuni_analytics.helpers.safety_net._load_leaf_certificate",
+        return_value=MagicMock(**{"public_key.return_value": "unexpected_type"}),
+    ):
+        with raises(SafetyNetVerificationError):
+            _verify_signature(attestation, certificates)
+
+    warning_logger.assert_called_once_with(
+        "Unexpected certificate public_key type.", extra=dict(public_key="unexpected_type")
+    )

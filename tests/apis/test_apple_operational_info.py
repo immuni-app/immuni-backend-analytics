@@ -12,7 +12,6 @@
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import json
-from copy import deepcopy
 from datetime import date
 from http import HTTPStatus
 from typing import Any, Dict
@@ -26,25 +25,12 @@ from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.redis import get_upload_authorization_member_for_current_month
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.models.enums import Platform
+from tests.fixtures.operational_info import OPERATIONAL_INFO
 
 ANALYTICS_TOKEN = (
     "0a17753fecc38a5e259319e4524b55df439a98c1ff6326df7247263aa1192701cbe8799457cb1ac173590"
     "eecb11bfe62a34cc0798f95d8842124814c24f53ff"
 )
-
-OPERATIONAL_INFO = {
-    "province": "CH",
-    "exposure_permission": 0,
-    "bluetooth_active": 1,
-    "notification_permission": 1,
-    "exposure_notification": 1,
-    "last_risky_exposure_on": "2020-06-15",
-}
-
-
-@fixture
-def operational_info() -> Dict[str, Any]:
-    return deepcopy(OPERATIONAL_INFO)
 
 
 @fixture

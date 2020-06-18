@@ -276,6 +276,7 @@ def _validate_payload(
         raise SafetyNetVerificationError()
 
 
+# pylint: disable=duplicate-code
 def verify_attestation(
     safety_net_attestation: str,
     salt: str,

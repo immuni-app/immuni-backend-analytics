@@ -19,6 +19,7 @@ from pytest import mark
 
 from immuni_analytics.celery.authorization.tasks.authorize_analytics_token import (
     _authorize_analytics_token,
+    _blacklist_device,
 )
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
@@ -385,3 +386,17 @@ async def test_authorize_analytics_token_bad_format(
             await _authorize_analytics_token(TEST_ANALYTICS_TOKEN, TEST_DEVICE_TOKEN)
 
     assert not await managers.analytics_redis.smembers(TEST_ANALYTICS_TOKEN)
+
+
+@freeze_time("2020-01-31")
+@patch(
+    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+    "set_device_check_bits",
+    return_value=AsyncMock(),
+)
+async def test_blacklist_not_working_if_not_release_environment(
+    mock_set_device_check_bits: AsyncMock,
+) -> None:
+    await _blacklist_device("test_token")
+
+    mock_set_device_check_bits.assert_not_called()
