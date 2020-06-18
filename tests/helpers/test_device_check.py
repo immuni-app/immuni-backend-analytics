@@ -221,9 +221,6 @@ async def test_set_device_check_bits_bad_format(
     "immuni_analytics.helpers.device_check._generate_common_payload", MagicMock(return_value={}),
 )
 @patch(
-    "immuni_analytics.helpers.device_check.post_with_retry", AsyncMock(side_effect=ClientError()),
-)
-@patch(
     "immuni_analytics.helpers.device_check.ClientSession", return_value=AsyncMock(),
 )
 @patch("immuni_analytics.helpers.device_check._LOGGER.warning",)
