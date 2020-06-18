@@ -19,10 +19,10 @@ sanic_app = create_app(
     api_title="Analytics Service",
     api_description="The Analytics Service provides an API to the Mobile Clients for uploading"
     " certain data without identifying users, both during regular operations"
-    " and especially when a Match is found between a TEK Chunk and the RPIs"
-    " in the RPI Database.<br><br>Collecting these data is crucial to spotting"
-    " anomalies in the system, as well as being able to check how many users are"
-    " being notified. The National Healthcare System needs this information to"
+    " and especially when a match is found between a TEK Chunk and the RPIs in"
+    " the RPI Database. Collecting these data is crucial to spotting anomalies"
+    " in the system, as well as being able to check how many users are being"
+    " notified. The National Healthcare System needs this information to"
     " operate Immuni effectively.",
     blueprints=(analytics.bp,),
     managers=managers,

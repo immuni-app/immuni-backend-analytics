@@ -28,6 +28,7 @@ def _get_schedules() -> Tuple[Schedule, ...]:
     """
     Get static scheduling of tasks.
     # NOTE: Tasks need to be imported locally, so as to avoid cyclic dependencies.
+
     :return: the tuple of tasks schedules.
     """
 
