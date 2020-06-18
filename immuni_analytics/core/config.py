@@ -36,7 +36,6 @@ EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY: str = config(
     "EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY", default="errors_exposure_data"
 )
 OPERATIONAL_INFO_QUEUE_KEY: str = config("OPERATIONAL_INFO_QUEUE_KEY", default="operational_info")
-
 CELERY_ALWAYS_EAGER: bool = config(
     "CELERY_ALWAYS_EAGER", cast=bool, default=ENV == Environment.TESTING
 )
@@ -46,11 +45,8 @@ CELERY_BROKER_REDIS_URL_AUTHORIZATION: str = config(
 CELERY_BROKER_REDIS_URL_SCHEDULED: str = config(
     "CELERY_BROKER_REDIS_URL_SCHEDULED", default="redis://localhost:6379/0"
 )
-CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO: str = config(
-    "CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO", default="redis://localhost:6379/0"
-)
 CELERY_APP_NAME: CeleryAppName = config(
-    "CELERY_APP_NAME", cast=CeleryAppName.from_env_var, default=CeleryAppName.OPERATIONAL_INFO
+    "CELERY_APP_NAME", cast=CeleryAppName.from_env_var, default=CeleryAppName.AUTHORIZATION
 )
 
 ANALYTICS_TOKEN_SIZE: int = config("ANALYTICS_TOKEN_SIZE", cast=int, default=128)
