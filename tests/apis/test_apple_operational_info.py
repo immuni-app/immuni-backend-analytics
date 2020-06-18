@@ -16,6 +16,7 @@ from copy import deepcopy
 from datetime import date
 from http import HTTPStatus
 from typing import Any, Dict
+from unittest.mock import MagicMock, patch
 
 from pytest import fixture, mark
 from pytest_sanic.utils import TestClient
@@ -55,8 +56,12 @@ def headers() -> Dict[str, str]:
     }
 
 
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
 async def test_apple_operational_info_with_exposure(
-    client: TestClient, operational_info: Dict[str, Any], headers: Dict[str, str]
+    redis_logger_info: MagicMock,
+    client: TestClient,
+    operational_info: Dict[str, Any],
+    headers: Dict[str, str],
 ) -> None:
     # authorize the current token for the upload
     await managers.analytics_redis.sadd(
@@ -81,9 +86,12 @@ async def test_apple_operational_info_with_exposure(
             last_risky_exposure_on=date.fromisoformat(operational_info["last_risky_exposure_on"]),
         ).to_dict()
     )
+
     assert not await managers.analytics_redis.sismember(
         get_upload_authorization_member_for_current_month(with_exposure=True), ANALYTICS_TOKEN
     )
+
+    redis_logger_info.assert_called_once_with("Successfully enqueued operational info.")
 
 
 async def test_apple_operational_info_missing_token(
@@ -96,8 +104,12 @@ async def test_apple_operational_info_missing_token(
     assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 0
 
 
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
 async def test_apple_operational_info_without_exposure(
-    client: TestClient, operational_info: Dict[str, Any], headers: Dict[str, str]
+    redis_logger_info: MagicMock,
+    client: TestClient,
+    operational_info: Dict[str, Any],
+    headers: Dict[str, str],
 ) -> None:
     assert OperationalInfo.objects.count() == 0
     operational_info["exposure_notification"] = 0
@@ -130,9 +142,15 @@ async def test_apple_operational_info_without_exposure(
         get_upload_authorization_member_for_current_month(with_exposure=False), ANALYTICS_TOKEN
     )
 
+    redis_logger_info.assert_called_once_with("Successfully enqueued operational info.")
 
+
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
 async def test_apple_operational_info_dummy(
-    client: TestClient, operational_info: Dict[str, Any], headers: Dict[str, str]
+    redis_logger_info: MagicMock,
+    client: TestClient,
+    operational_info: Dict[str, Any],
+    headers: Dict[str, str],
 ) -> None:
     headers["Immuni-Dummy-Data"] = "1"
     response = await client.post(
@@ -141,6 +159,8 @@ async def test_apple_operational_info_dummy(
 
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 0
+
+    redis_logger_info.assert_not_called()
 
 
 @mark.parametrize(

@@ -38,8 +38,12 @@ def headers() -> Dict[str, str]:
 
 
 @freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
 async def test_google_operational_info_with_exposure(
-    client: TestClient, safety_net_post_body_with_exposure: Dict[str, Any], headers: Dict[str, str]
+    redis_logger_info: MagicMock,
+    client: TestClient,
+    safety_net_post_body_with_exposure: Dict[str, Any],
+    headers: Dict[str, str],
 ) -> None:
     with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_APK_DIGEST", TEST_APK_DIGEST):
         with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
@@ -79,10 +83,13 @@ async def test_google_operational_info_with_exposure(
         )
         == "1"
     )
+    redis_logger_info.assert_called_once_with("Successfully enqueued operational info.")
 
 
 @freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
 async def test_google_operational_info_without_exposure(
+    redis_logger_info: MagicMock,
     client: TestClient,
     safety_net_post_body_without_exposure: Dict[str, Any],
     headers: Dict[str, str],
@@ -125,11 +132,16 @@ async def test_google_operational_info_without_exposure(
         )
         == "1"
     )
+    redis_logger_info.assert_called_once_with("Successfully enqueued operational info.")
 
 
 @freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
 async def test_google_operational_info_dummy(
-    client: TestClient, safety_net_post_body_with_exposure: Dict[str, Any], headers: Dict[str, str]
+    redis_logger_info: MagicMock,
+    client: TestClient,
+    safety_net_post_body_with_exposure: Dict[str, Any],
+    headers: Dict[str, str],
 ) -> None:
     headers["Immuni-Dummy-Data"] = "1"
 
@@ -147,6 +159,7 @@ async def test_google_operational_info_dummy(
         )
         is None
     )
+    redis_logger_info.assert_not_called()
 
 
 @freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))

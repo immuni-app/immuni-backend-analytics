@@ -12,6 +12,7 @@
 #   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import json
+import logging
 from typing import List
 
 from immuni_analytics.core import config
@@ -19,14 +20,16 @@ from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.date_utils import current_month, next_month
 from immuni_analytics.models.operational_info import OperationalInfo
 
+_LOGGER = logging.getLogger(__name__)
+
 
 def get_upload_authorization_member_for_current_month(with_exposure: bool) -> str:
     """
     Generate the redis key associated with the authorized analytics tokens for the current month.
 
     :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
-      with exposure or not
-    :return: the redis key
+      with exposure or not.
+    :return: the redis key.
     """
     return f"{current_month().isoformat()}:{int(with_exposure)}"
 
@@ -36,7 +39,7 @@ def get_upload_authorization_member_for_next_month(with_exposure: bool) -> str:
     Generate the redis key associated with the authorized analytics tokens for the next month.
 
     :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
-      with exposure or not
+      with exposure or not.
     :return: the redis key
     """
     return f"{next_month().isoformat()}:{int(with_exposure)}"
@@ -74,8 +77,10 @@ async def enqueue_operational_info(operational_info: OperationalInfo) -> None:
     """
     Stores the given operational info in the queue that will later
      be processed by the celery workers.
+
     :param operational_info: The operational info to be stored.
     """
     await managers.analytics_redis.rpush(
         config.OPERATIONAL_INFO_QUEUE_KEY, json.dumps(operational_info.to_dict())
     )
+    _LOGGER.info("Successfully enqueued operational info.")
