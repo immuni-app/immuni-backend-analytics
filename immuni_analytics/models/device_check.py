@@ -36,7 +36,7 @@ class DeviceCheckData:
         :return: a date object representing the last update.
         """
         if self.last_update_time is None:
-            raise ValueError("DeviceCheckData last_update_time is None")
+            raise ValueError("DeviceCheckData last_update_time is None.")
 
         return date.fromisoformat(f"{self.last_update_time}-01")
 

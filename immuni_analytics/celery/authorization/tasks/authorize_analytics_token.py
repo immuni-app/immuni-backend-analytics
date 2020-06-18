@@ -20,6 +20,7 @@ from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.device_check import fetch_device_check_bits, set_device_check_bits
 from immuni_analytics.helpers.redis import get_all_authorizations_for_upload
+from immuni_analytics.helpers.request import BadFormatRequestError
 from immuni_common.core.exceptions import ImmuniException
 from immuni_common.models.enums import Environment
 
@@ -43,6 +44,14 @@ def authorize_analytics_token(analytics_token: str, device_token: str) -> None: 
 
 
 async def _authorize_analytics_token(analytics_token: str, device_token: str) -> None:
+    """
+    Check that the device token comes from a genuine device that is not sending concurrent
+    calls. In case no anomalies are found authorize the analytics token to perform
+    uploads of operational info.
+
+    :param analytics_token: the analytics token to authorize.
+    :param device_token: the device token to check against the DeviceCheck api.
+    """
     try:
         # NOTE: bandit complains about using random.uniform stating "[B311:blacklist] Standard
         #  pseudo-random generators are not suitable for security/cryptographic purposes.".
@@ -56,8 +65,12 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
 
     except BlacklistDeviceException:
         await _blacklist_device(device_token)
+        return
 
     except DiscardAnalyticsTokenException:
+        return
+
+    except BadFormatRequestError:
         return
 
     await _add_analytics_token_to_redis(analytics_token)
@@ -77,7 +90,7 @@ async def _first_step(device_token: str) -> None:
     # developer device only once a month.
     if config.ENV == Environment.RELEASE and device_check_data.used_in_current_month:
         _LOGGER.warning(
-            "Found token already used in current month",
+            "Found token already used in current month.",
             extra=dict(
                 env=config.ENV.value,
                 bit0=device_check_data.bit0,
