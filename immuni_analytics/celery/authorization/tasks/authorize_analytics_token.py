@@ -18,9 +18,12 @@ import random
 from immuni_analytics.celery.authorization.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
-from immuni_analytics.helpers.device_check import fetch_device_check_bits, set_device_check_bits
+from immuni_analytics.helpers.device_check import (
+    DeviceCheckApiError,
+    fetch_device_check_bits,
+    set_device_check_bits,
+)
 from immuni_analytics.helpers.redis import get_all_authorizations_for_upload
-from immuni_analytics.helpers.request import BadFormatRequestError
 from immuni_common.core.exceptions import ImmuniException
 from immuni_common.models.enums import Environment
 
@@ -67,10 +70,7 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
         await _blacklist_device(device_token)
         return
 
-    except DiscardAnalyticsTokenException:
-        return
-
-    except BadFormatRequestError:
+    except (DiscardAnalyticsTokenException, DeviceCheckApiError):
         return
 
     await _add_analytics_token_to_redis(analytics_token)

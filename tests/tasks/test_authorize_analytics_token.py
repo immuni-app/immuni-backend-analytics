@@ -23,7 +23,7 @@ from immuni_analytics.celery.authorization.tasks.authorize_analytics_token impor
 )
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
-from immuni_analytics.helpers.request import BadFormatRequestError
+from immuni_analytics.helpers.device_check import DeviceCheckApiError
 from immuni_analytics.models.device_check import DeviceCheckData
 from immuni_common.models.enums import Environment
 
@@ -330,7 +330,7 @@ async def test_authorize_analytics_token_third_step_not_compliant(
     "first_read_data,second_read_data,third_read_data,first_set_data,second_set_data",
     [
         (
-            BadFormatRequestError(),
+            DeviceCheckApiError(),
             RuntimeError("Should not call this function."),
             RuntimeError("Should not call this function."),
             RuntimeError("Should not call this function."),
@@ -338,7 +338,7 @@ async def test_authorize_analytics_token_third_step_not_compliant(
         ),
         (
             DeviceCheckData(False, False, None),
-            BadFormatRequestError(),
+            DeviceCheckApiError(),
             RuntimeError("Should not call this function."),
             RuntimeError("Should not call this function."),
             RuntimeError("Should not call this function."),
@@ -347,13 +347,13 @@ async def test_authorize_analytics_token_third_step_not_compliant(
             DeviceCheckData(False, False, None),
             DeviceCheckData(False, False, None),
             RuntimeError("Should not call this function."),
-            BadFormatRequestError(),
+            DeviceCheckApiError(),
             RuntimeError("Should not call this function."),
         ),
         (
             DeviceCheckData(False, False, None),
             DeviceCheckData(False, False, None),
-            BadFormatRequestError(),
+            DeviceCheckApiError(),
             None,
             RuntimeError("Should not call this function."),
         ),
@@ -362,16 +362,16 @@ async def test_authorize_analytics_token_third_step_not_compliant(
             DeviceCheckData(False, False, None),
             DeviceCheckData(True, False, "2020-01"),
             None,
-            BadFormatRequestError(),
+            DeviceCheckApiError(),
         ),
     ],
 )
 async def test_authorize_analytics_token_bad_format(
-    first_read_data: Union[DeviceCheckData, BadFormatRequestError, RuntimeError],
-    second_read_data: Union[DeviceCheckData, BadFormatRequestError, RuntimeError],
-    third_read_data: Union[DeviceCheckData, BadFormatRequestError, RuntimeError],
-    first_set_data: Union[None, BadFormatRequestError, RuntimeError],
-    second_set_data: Union[None, BadFormatRequestError, RuntimeError],
+    first_read_data: Union[DeviceCheckData, DeviceCheckApiError, RuntimeError],
+    second_read_data: Union[DeviceCheckData, DeviceCheckApiError, RuntimeError],
+    third_read_data: Union[DeviceCheckData, DeviceCheckApiError, RuntimeError],
+    first_set_data: Union[None, DeviceCheckApiError, RuntimeError],
+    second_set_data: Union[None, DeviceCheckApiError, RuntimeError],
 ) -> None:
     with patch(
         "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
