@@ -32,7 +32,7 @@ from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation i
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
-from immuni_analytics.helpers.api import allows_dummy_requests, inject_operational_info
+from immuni_analytics.helpers.api import inject_operational_info
 from immuni_analytics.helpers.redis import (
     enqueue_operational_info,
     get_upload_authorization_member_for_current_month,
@@ -45,8 +45,9 @@ from immuni_analytics.models.swagger import (
     GoogleOperationalInfo,
 )
 from immuni_common.core.exceptions import SchemaValidationException
-from immuni_common.helpers.sanic import json_response, validate
+from immuni_common.helpers.sanic import handle_dummy_requests, json_response, validate
 from immuni_common.helpers.swagger import doc_exception
+from immuni_common.helpers.utils import WeightedPayload
 from immuni_common.models.enums import Location
 from immuni_common.models.marshmallow.fields import (
     Base64String,
@@ -92,7 +93,9 @@ bp = Blueprint("analytics", url_prefix="analytics")
     exposure_notification=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
 )
-@allows_dummy_requests
+@handle_dummy_requests(
+    [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
+)
 @inject_operational_info
 async def post_operational_info(
     request: Request, operational_info: OperationalInfoDocument, **kwargs: Any
@@ -146,7 +149,9 @@ async def post_operational_info(
         required=True, validate=Length(max=config.SIGNED_ATTESTATION_MAX_LENGTH)
     ),
 )
-@allows_dummy_requests
+@handle_dummy_requests(
+    [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
+)
 @inject_operational_info
 async def post_android_operational_info(
     request: Request,
