@@ -84,7 +84,7 @@ def test_device_check_data_is_default_config_compliant(
 ) -> None:
     data = DeviceCheckData(bit0, bit1, last_update_time)
 
-    assert data.is_default_configuration_compliant is expected
+    assert data.is_default_configuration is expected
 
 
 @freeze_time("2020-06-10")
@@ -106,7 +106,7 @@ def test_device_check_data_is_authorized_config_compliant(
 ) -> None:
     data = DeviceCheckData(bit0, bit1, last_update_time)
 
-    assert data.is_authorized_configuration_compliant is expected
+    assert data.is_authorized is expected
 
 
 @freeze_time("2020-06-10")
@@ -128,4 +128,4 @@ def test_device_check_data_is_blacklisted(
 ) -> None:
     data = DeviceCheckData(bit0, bit1, last_update_time)
 
-    assert data.is_blacklisted_configuration is expected
+    assert data.is_blacklisted is expected

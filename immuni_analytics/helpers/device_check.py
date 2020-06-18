@@ -99,7 +99,8 @@ async def fetch_device_check_bits(token: str) -> DeviceCheckData:
             _LOGGER.warning("The DeviceCheck API is not available.", extra={"payload": payload})
             raise DeviceCheckApiError() from exc
 
-        # if the bits have never been set the api returns 200 with a specific string
+        # if the bits have never been set the api returns 200 with a plain string
+        # instead of a json response.
         if response.decode("utf-8") == "Failed to find bit state":
             return DeviceCheckData(bit0=False, bit1=False, last_update_time=None)
 

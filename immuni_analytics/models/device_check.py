@@ -48,32 +48,30 @@ class DeviceCheckData:
         return self.last_update_time is not None and current_month() <= self._last_update_month
 
     @property
-    def is_default_configuration_compliant(self) -> bool:
+    def is_default_configuration(self) -> bool:
         """
-        Check if the data represent an expected configuration for the first and second read.
-        The correct configurations are:
-         - the last_update_time is not defined
-         - the last_update_time is at least one month ago and both bits are false.
+        Check if the bits are set as expected in the first or second read operations.
+        Namely, if both bits are False.
 
         :return: True if the configuration is correct, False otherwise.
         """
         return not self.bit0 and not self.bit1
 
     @property
-    def is_authorized_configuration_compliant(self) -> bool:
+    def is_authorized(self) -> bool:
         """
-        Check if the data represent an expected configuration for the third read.
-        The correct configuration is bit0 = True and bit1 = False
+        Check if the bits are set as expected for the third read.
+        Namely, if bit0 = True and bit1 = False
 
         :return: True if the configuration is correct, False otherwise.
         """
         return self.bit0 and not self.bit1
 
     @property
-    def is_blacklisted_configuration(self) -> bool:
+    def is_blacklisted(self) -> bool:
         """
-        Check if the date represent a blacklisted device configuration.
-         Namely if both bits are True.
+        Check if the bits are as expected for a blacklisted device.
+        Namely, if both bits are True.
 
         :return: True if the if the device is blacklisted, False otherwise.
         """

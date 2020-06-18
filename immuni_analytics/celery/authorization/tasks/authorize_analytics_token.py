@@ -100,7 +100,7 @@ async def _first_step(device_token: str) -> None:
         )
         raise DiscardAnalyticsTokenException()
 
-    if not device_check_data.is_default_configuration_compliant:
+    if not device_check_data.is_default_configuration:
         _LOGGER.warning(
             "Found token not default configuration compliant in first step.",
             extra=dict(
@@ -122,7 +122,7 @@ async def _second_step(device_token: str) -> None:
     :raises: BlacklistDeviceException if an anomaly is detected.
     """
     device_check_data = await fetch_device_check_bits(device_token)
-    if not device_check_data.is_default_configuration_compliant:
+    if not device_check_data.is_default_configuration:
         _LOGGER.warning(
             "Found token not default configuration compliant in second step.",
             extra=dict(
@@ -146,7 +146,7 @@ async def _third_step(device_token: str) -> None:
     :raises: BlacklistDeviceException if an anomaly is detected.
     """
     device_check_data = await fetch_device_check_bits(device_token)
-    if not device_check_data.is_authorized_configuration_compliant:
+    if not device_check_data.is_authorized:
         _LOGGER.warning(
             "Found token not authorization configuration compliant in third step.",
             extra=dict(
