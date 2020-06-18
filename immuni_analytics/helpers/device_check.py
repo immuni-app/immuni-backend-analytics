@@ -92,12 +92,12 @@ async def fetch_device_check_bits(token: str) -> DeviceCheckData:
             response = await post_with_retry(
                 session, url=_DEVICE_CHECK_GET_BITS_URL, json=payload, headers=_generate_headers()
             )
-        except BadFormatRequestError:
+        except BadFormatRequestError as exc:
             _LOGGER.warning("The DeviceCheck API returned a 400 error.", extra={"payload": payload})
-            raise DeviceCheckApiError()
+            raise DeviceCheckApiError() from exc
         except (ClientError, TimeoutError, ServerUnavailableError) as exc:
             _LOGGER.warning("The DeviceCheck API is not available.", extra={"payload": payload})
-            raise DeviceCheckApiError from exc
+            raise DeviceCheckApiError() from exc
 
         # if the bits have never been set the api returns 200 with a specific string
         if response.decode("utf-8") == "Failed to find bit state":
@@ -126,9 +126,9 @@ async def set_device_check_bits(token: str, *, bit0: bool, bit1: bool) -> None:
             await post_with_retry(
                 session, url=_DEVICE_CHECK_SET_BITS_URL, json=payload, headers=_generate_headers()
             )
-        except BadFormatRequestError:
+        except BadFormatRequestError as exc:
             _LOGGER.warning("The DeviceCheck API returned a 400 error", extra={"payload": payload})
-            raise DeviceCheckApiError()
+            raise DeviceCheckApiError() from exc
         except (ClientError, TimeoutError, ServerUnavailableError) as exc:
             _LOGGER.warning("The DeviceCheck API is not available.", extra={"payload": payload})
-            raise DeviceCheckApiError from exc
+            raise DeviceCheckApiError() from exc
