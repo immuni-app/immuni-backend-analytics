@@ -28,18 +28,18 @@ from immuni_common.core.exceptions import ImmuniException
 _LOGGER = logging.getLogger(__name__)
 
 
+class InvalidFormatException(ImmuniException):
+    """
+    Raised when the ingested date format is invalid.
+    """
+
+
 @celery_app.task()
 def store_exposure_payloads() -> None:  # pragma: no cover
     """
     Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
     asyncio.run(_store_exposure_payloads())
-
-
-class InvalidFormatException(ImmuniException):
-    """
-    Raised when the ingested date format is invalid.
-    """
 
 
 async def _store_exposure_payloads() -> None:
