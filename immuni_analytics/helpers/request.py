@@ -70,12 +70,15 @@ async def post_with_retry(
     :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError
     :return: the client response if successful.
     """
-    async with session.post(
+    params = dict(
         url=url,
         json=json,
         headers=headers,
         timeout=ClientTimeout(total=config.REQUESTS_TIMEOUT_SECONDS),
-    ) as response:
+    )
+
+    async with session.post(**params) as response:
+        _LOGGER.info("Performed HTTP request.", extra=dict(request=params, response=response))
         if response.status >= 500:
             raise ServerUnavailableError()
         if response.status >= 400:
