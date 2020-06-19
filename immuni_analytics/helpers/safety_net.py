@@ -36,6 +36,10 @@ from immuni_common.core.exceptions import ImmuniException
 _LOGGER = logging.getLogger(__name__)
 
 
+class SafetyNetVerificationError(ImmuniException):
+    """Raised when one of the steps in the verification fails."""
+
+
 def get_redis_key(salt: str) -> str:
     """
     Retrieve the redis key for a given salt.
@@ -44,10 +48,6 @@ def get_redis_key(salt: str) -> str:
     :return: the redis key containing the salt.
     """
     return f"~safetynet-used-salt:{salt}"
-
-
-class SafetyNetVerificationError(ImmuniException):
-    """Raised when one of the steps in the verification fails."""
 
 
 def _get_jws_part(jws_token: str, index: int) -> str:
