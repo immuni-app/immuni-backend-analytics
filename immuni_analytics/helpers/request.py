@@ -70,7 +70,7 @@ async def post_with_retry(
     :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError
     :return: the client response if successful.
     """
-    params = dict(
+    params: Dict[str, Any] = dict(
         url=url,
         json=json,
         headers=headers,
