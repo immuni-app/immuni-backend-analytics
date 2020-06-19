@@ -31,29 +31,32 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DiscardAnalyticsTokenException(ImmuniException):
-    """Raised when the device cannot authorize an analytics token."""
+    """
+    Raised when the device cannot authorize an analytics token.
+    """
 
 
 class BlacklistDeviceException(ImmuniException):
-    """Raised when a device is attempting to validate multiple tokens."""
+    """
+    Raised when a device is attempting to validate multiple tokens.
+    """
 
 
 @celery_app.task()
 def authorize_analytics_token(analytics_token: str, device_token: str) -> None:  # pragma: no cover
     """
-     Celery doesn't support async functions, so we wrap it around asyncio.run.
-     """
+    Celery doesn't support async functions, so we wrap it around asyncio.run.
+    """
     asyncio.run(_authorize_analytics_token(analytics_token, device_token))
 
 
 async def _authorize_analytics_token(analytics_token: str, device_token: str) -> None:
     """
-    Check if the device token comes from a genuine device that is not sending concurrent
-    calls. In case no anomalies are found authorize the analytics token to perform
-    uploads of operational info.
+    Check if the device token comes from a genuine device that is not sending concurrent calls.
+    If there are no anomalies, authorize the analytics token to perform operational info uploads.
 
     :param analytics_token: the analytics token to authorize.
-    :param device_token: the device token to check against the DeviceCheck api.
+    :param device_token: the device token to check against the DeviceCheck API.
     """
     # NOTE: bandit complains about using random.uniform stating "[B311:blacklist] Standard
     #  pseudo-random generators are not suitable for security/cryptographic purposes.".
@@ -85,8 +88,9 @@ async def _first_step(device_token: str) -> None:
     Fetch the DeviceCheck bits and ensure the bit configuration is the expected one.
     If not, blacklist the device.
 
-    :raises: BlacklistDeviceException if an anomaly is detected,
-     DiscardAnalyticsTokenException if the device token has been used already in the current month.
+    :raises:
+      BlacklistDeviceException: if an anomaly is detected
+      DiscardAnalyticsTokenException: if the token has already been used in the current month.
     """
     device_check_data = await fetch_device_check_bits(device_token)
 
@@ -144,7 +148,7 @@ async def _second_step(device_token: str) -> None:
 async def _third_step(device_token: str) -> None:
     """
     Fetch the DeviceCheck bits and ensure the bit configuration is the expected one.
-    If it is, set the bits to (0,0) and return.
+    If it is, set the bits to (False, False) and return.
     If not, blacklist the device.
 
     :raises: BlacklistDeviceException if an anomaly is detected.
@@ -172,16 +176,16 @@ async def _blacklist_device(device_token: str) -> None:
 
     :param device_token: the device token of the device to blacklist.
     """
-    # Do not blacklist devices if we are not in release environment otherwise we need to
-    # manually unlock developer devices
+    # NOTE: To avoid manually unlocking developers devices, perform blacklisting only within the
+    #  release environment.
     if config.ENV == Environment.RELEASE:
         await set_device_check_bits(device_token, bit0=True, bit1=True)
 
 
 async def _add_analytics_token_to_redis(analytics_token: str) -> None:
     """
-    Add the values needed to update operational info for the current and the next month
-    to the set associated with the analytics token.
+    Add the values needed to update operational info for the current and the next month to the set
+    associated with the analytics token.
 
     :param analytics_token: the analytics token to authorize for upload.
     """
