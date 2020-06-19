@@ -65,11 +65,11 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
     try:
         await _first_step(device_token)
         await asyncio.sleep(
-            random.uniform(config.CHECK_TIME_SECONDS_MIN, config.CHECK_TIME_SECONDS_MAX)
+            random.uniform(config.CHECK_TIME_SECONDS_MIN, config.CHECK_TIME_SECONDS_MAX)  # nosec
         )
         await _second_step(device_token)
         await asyncio.sleep(
-            random.uniform(config.READ_TIME_SECONDS_MIN, config.READ_TIME_SECONDS_MAX)
+            random.uniform(config.READ_TIME_SECONDS_MIN, config.READ_TIME_SECONDS_MAX)  # nosec
         )
         await _third_step(device_token)
 
