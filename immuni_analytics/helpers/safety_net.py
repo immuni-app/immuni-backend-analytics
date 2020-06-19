@@ -37,7 +37,18 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SafetyNetVerificationError(ImmuniException):
-    """Raised when one of the steps in the verification fails."""
+    """
+    Raised when one of the steps in the verification fails.
+    """
+
+
+class MalformedJwsToken(ImmuniException):
+    """
+    Raised when the JSW token is malformed.
+    """
+
+    def __init__(self, jws_token: str) -> None:
+        super().__init__(f"Malformed JWS token: {jws_token}.")
 
 
 def get_redis_key(salt: str) -> str:
@@ -57,13 +68,13 @@ def _get_jws_part(jws_token: str, index: int) -> str:
     :param jws_token: the jws_token to split.
     :param index: the jws_token part to retrieves.
     :return: the jws_token part specified by index.
-    :raises: ValueError, IndexError
+    :raises: MalformedJwsToken, IndexError.
     """
 
     if len(parts := jws_token.split(".")) == 3:
         return parts[index]
 
-    raise ValueError("The jws token is badly formatted")
+    raise MalformedJwsToken(jws_token)
 
 
 def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
@@ -72,6 +83,7 @@ def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
 
     :param jws_part: the base string to b64decode.
     :return: the decoded string.
+    :raises: UnicodeDecodeError if the decode fails.
     """
     padding = "=" * (4 - (len(jws_part) % 4))
     padded_jws_part = f"{jws_part}{padding}"
@@ -89,7 +101,13 @@ def _get_jws_header(jws_token: str) -> Dict[str, Any]:
     """
     try:
         header = _parse_jws_part(_get_jws_part(jws_token, 0))
-    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
+    except (
+        binascii.Error,
+        IndexError,
+        JSONDecodeError,
+        MalformedJwsToken,
+        UnicodeDecodeError,
+    ) as exc:
         _LOGGER.warning(
             "Could not retrieve header from jws token.",
             extra=dict(error=str(exc), jws_token=jws_token),
@@ -108,7 +126,7 @@ def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
     """
     try:
         return _parse_jws_part(_get_jws_part(jws_token, 1))
-    except (JSONDecodeError, binascii.Error, IndexError, ValueError) as exc:
+    except (binascii.Error, IndexError, JSONDecodeError, MalformedJwsToken) as exc:
         _LOGGER.warning(
             "Could not retrieve payload from jws token.",
             extra=dict(error=str(exc), jws_token=jws_token),

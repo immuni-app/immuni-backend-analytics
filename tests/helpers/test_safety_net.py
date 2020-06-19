@@ -22,6 +22,7 @@ from pytest import mark, raises
 
 from immuni_analytics.core import config
 from immuni_analytics.helpers.safety_net import (
+    MalformedJwsToken,
     SafetyNetVerificationError,
     _get_certificates,
     _get_jws_header,
@@ -60,7 +61,7 @@ def test_get_jws_part() -> None:
 
 @mark.parametrize("wrong_jws", ["first.second", "first.second.third.fourth.fifth", ""])
 def test_get_jws_part_raises_if_wrong_parts(wrong_jws: str) -> None:
-    with raises(ValueError):
+    with raises(MalformedJwsToken):
         _get_jws_part(wrong_jws, 1)
 
 
