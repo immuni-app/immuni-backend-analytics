@@ -35,7 +35,7 @@ from tests.helpers.test_safety_net import _operational_info_from_post_body
 
 @fixture
 def headers() -> Dict[str, str]:
-    return {"Immuni-Dummy-Data": "0", "Content-Type": "application/json; charset=utf-8"}
+    return {"Content-Type": "application/json; charset=utf-8", "Immuni-Dummy-Data": "0"}
 
 
 @freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
@@ -43,8 +43,8 @@ def headers() -> Dict[str, str]:
 async def test_google_operational_info_with_exposure(
     redis_logger_info: MagicMock,
     client: TestClient,
-    safety_net_post_body_with_exposure: Dict[str, Any],
     headers: Dict[str, str],
+    safety_net_post_body_with_exposure: Dict[str, Any],
 ) -> None:
     with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_APK_DIGEST", TEST_APK_DIGEST):
         with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
@@ -67,15 +67,15 @@ async def test_google_operational_info_with_exposure(
     assert (
         json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
-            platform=Platform.ANDROID,
-            province=safety_net_post_body_with_exposure["province"],
-            exposure_permission=safety_net_post_body_with_exposure["exposure_permission"],
             bluetooth_active=safety_net_post_body_with_exposure["bluetooth_active"],
-            notification_permission=safety_net_post_body_with_exposure["notification_permission"],
             exposure_notification=safety_net_post_body_with_exposure["exposure_notification"],
+            exposure_permission=safety_net_post_body_with_exposure["exposure_permission"],
             last_risky_exposure_on=date.fromisoformat(
                 safety_net_post_body_with_exposure["last_risky_exposure_on"]
             ),
+            notification_permission=safety_net_post_body_with_exposure["notification_permission"],
+            platform=Platform.ANDROID,
+            province=safety_net_post_body_with_exposure["province"],
         ).to_dict()
     )
     assert (
@@ -92,8 +92,8 @@ async def test_google_operational_info_with_exposure(
 async def test_google_operational_info_without_exposure(
     redis_logger_info: MagicMock,
     client: TestClient,
-    safety_net_post_body_without_exposure: Dict[str, Any],
     headers: Dict[str, str],
+    safety_net_post_body_without_exposure: Dict[str, Any],
 ) -> None:
     with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_APK_DIGEST", TEST_APK_DIGEST):
         with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
@@ -116,15 +116,15 @@ async def test_google_operational_info_without_exposure(
     assert (
         json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
-            platform=Platform.ANDROID,
-            province=safety_net_post_body_without_exposure["province"],
-            exposure_permission=safety_net_post_body_without_exposure["exposure_permission"],
             bluetooth_active=safety_net_post_body_without_exposure["bluetooth_active"],
+            exposure_notification=safety_net_post_body_without_exposure["exposure_notification"],
+            exposure_permission=safety_net_post_body_without_exposure["exposure_permission"],
+            last_risky_exposure_on=None,
             notification_permission=safety_net_post_body_without_exposure[
                 "notification_permission"
             ],
-            exposure_notification=safety_net_post_body_without_exposure["exposure_notification"],
-            last_risky_exposure_on=None,
+            platform=Platform.ANDROID,
+            province=safety_net_post_body_without_exposure["province"],
         ).to_dict()
     )
     assert (
@@ -141,8 +141,8 @@ async def test_google_operational_info_without_exposure(
 async def test_google_operational_info_dummy(
     redis_logger_info: MagicMock,
     client: TestClient,
-    safety_net_post_body_with_exposure: Dict[str, Any],
     headers: Dict[str, str],
+    safety_net_post_body_with_exposure: Dict[str, Any],
 ) -> None:
     headers["Immuni-Dummy-Data"] = "1"
 
@@ -168,8 +168,8 @@ async def test_google_operational_info_dummy(
 async def test_google_operational_info_used_salt(
     warning_logger: MagicMock,
     client: TestClient,
-    safety_net_post_body_with_exposure: Dict[str, Any],
     headers: Dict[str, str],
+    safety_net_post_body_with_exposure: Dict[str, Any],
 ) -> None:
     with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_APK_DIGEST", TEST_APK_DIGEST):
         with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
@@ -227,7 +227,7 @@ async def test_google_operational_info_used_salt(
     ],
 )
 async def test_google_operational_info_bad_request(
-    client: TestClient, bad_data: Dict[str, Any], headers: Dict[str, str]
+    bad_data: Dict[str, Any], client: TestClient, headers: Dict[str, str]
 ) -> None:
     response = await client.post(
         "/v1/analytics/google/operational-info", json=bad_data, headers=headers
@@ -243,9 +243,9 @@ async def test_google_operational_info_bad_request(
 @mark.parametrize("dummy_header", ["random", "-1", ""])
 async def test_upload_bad_request_dummy_header(
     client: TestClient,
-    safety_net_post_body_with_exposure: Dict[str, Any],
-    headers: Dict[str, str],
     dummy_header: str,
+    headers: Dict[str, str],
+    safety_net_post_body_with_exposure: Dict[str, Any],
 ) -> None:
     headers["Immuni-Dummy-Data"] = dummy_header
 
@@ -270,9 +270,9 @@ async def test_upload_bad_request_dummy_header(
 @mark.parametrize("province", ["asd", "ZZZ", "", None])
 async def test_invalid_province(
     client: TestClient,
-    safety_net_post_body_with_exposure: Dict[str, Any],
     headers: Dict[str, str],
     province: str,
+    safety_net_post_body_with_exposure: Dict[str, Any],
 ) -> None:
     safety_net_post_body_with_exposure["province"] = province
 
@@ -297,9 +297,9 @@ async def test_invalid_province(
 @mark.parametrize("last_risky_exposure_on", ["1970-01-01", "ZZZ", "", None])
 async def test_invalid_last_risky_exposure(
     client: TestClient,
-    safety_net_post_body_with_exposure: Dict[str, Any],
     headers: Dict[str, str],
     last_risky_exposure_on: str,
+    safety_net_post_body_with_exposure: Dict[str, Any],
 ) -> None:
     safety_net_post_body_with_exposure["last_risky_exposure_on"] = last_risky_exposure_on
 
@@ -336,9 +336,9 @@ async def test_invalid_last_risky_exposure(
 )
 async def test_invalid_integer_booleans(
     client: TestClient,
-    safety_net_post_body_with_exposure: Dict[str, Any],
-    headers: Dict[str, str],
     field: str,
+    headers: Dict[str, str],
+    safety_net_post_body_with_exposure: Dict[str, Any],
     value: Any,
 ) -> None:
     safety_net_post_body_with_exposure[field] = value

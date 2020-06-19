@@ -31,13 +31,13 @@ class OperationalInfo(AnalyticsDocument):
     Model representing the operational information to save in the database.
     """
 
+    bluetooth_active: bool = BooleanField(required=True)
+    exposure_notification: bool = BooleanField(required=True)
+    exposure_permission: bool = BooleanField(required=True)
+    last_risky_exposure_on: Optional[date] = DateField(required=False)
+    notification_permission: bool = BooleanField(required=True)
     platform: Platform = EnumField(enum=Platform, required=True)
     province: str = StringField(required=True)
-    exposure_permission: bool = BooleanField(required=True)
-    bluetooth_active: bool = BooleanField(required=True)
-    notification_permission: bool = BooleanField(required=True)
-    exposure_notification: bool = BooleanField(required=True)
-    last_risky_exposure_on: Optional[date] = DateField(required=False)
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -46,16 +46,16 @@ class OperationalInfo(AnalyticsDocument):
         :return: a dictionary representing the OperationalInfo document.
         """
         return dict(
-            platform=self.platform.value,  # pylint: disable=no-member
-            province=self.province,
-            exposure_permission=self.exposure_permission,
             bluetooth_active=self.bluetooth_active,
-            notification_permission=self.notification_permission,
             exposure_notification=self.exposure_notification,
+            exposure_permission=self.exposure_permission,
             # pylint: disable=no-member
             last_risky_exposure_on=self.last_risky_exposure_on.isoformat()
             if self.last_risky_exposure_on
             else None,
+            notification_permission=self.notification_permission,
+            platform=self.platform.value,  # pylint: disable=no-member
+            province=self.province,
         )
 
     @staticmethod
@@ -67,13 +67,13 @@ class OperationalInfo(AnalyticsDocument):
         :return: an OperationalInfo document generated from the given dictionary.
         """
         return OperationalInfo(
-            platform=Platform(value["platform"]),
-            province=value["province"],
-            exposure_permission=value["exposure_permission"],
             bluetooth_active=value["bluetooth_active"],
-            notification_permission=value["notification_permission"],
             exposure_notification=value["exposure_notification"],
+            exposure_permission=value["exposure_permission"],
             last_risky_exposure_on=date.fromisoformat(value["last_risky_exposure_on"])
             if value.get("last_risky_exposure_on")
             else None,
+            notification_permission=value["notification_permission"],
+            platform=Platform(value["platform"]),
+            province=value["province"],
         )

@@ -52,12 +52,12 @@ class SafetyNetVerificationError(ImmuniException):
 
 def _get_jws_part(jws_token: str, index: int) -> str:
     """
-    Split the jws token in the its different parts and return the specified one.
+    Split the jws token in its different parts and return the specified one.
 
     :param jws_token: the jws_token to split.
     :param index: the jws_token part to retrieves.
-    :raises: ValueError, IndexError
     :return: the jws_token part specified by index.
+    :raises: ValueError, IndexError
     """
 
     if len(parts := jws_token.split(".")) == 3:
@@ -121,8 +121,8 @@ def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
     Retrieve the certificates from the jws header.
 
     :param header: the jws header.
+    :return: the list of retrieved certificates.
     :raises: SafetyNetVerificationError if the certificates could not be retrieved or decoded.
-    "
     """
     try:
         certificates_string = header["x5c"]
@@ -170,6 +170,8 @@ def _validate_certificates(certificates: List[bytes]) -> None:
 
     :param certificates: the list of certificates.
     :return: the leaf certificate.
+    :raises: SafetyNetVerificationError if the certificate chain is not valid or the hostname is
+     not the expected one.
     """
     try:
         validator = CertificateValidator(certificates[0], certificates[1:])

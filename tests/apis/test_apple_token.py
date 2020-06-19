@@ -74,7 +74,7 @@ async def test_apple_token(client: TestClient) -> None:
     "bad_data", [{k: v for k, v in TOKEN_BODY.items() if k != excluded} for excluded in TOKEN_BODY],
 )
 async def test_google_operational_info_bad_request(
-    client: TestClient, bad_data: Dict[str, Any]
+    bad_data: Dict[str, Any], client: TestClient
 ) -> None:
     response = await client.post("/v1/analytics/apple/token", json=bad_data)
 

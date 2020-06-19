@@ -183,7 +183,7 @@ async def test_authorize_analytics_token_first_step_not_compliant(
         await _authorize_analytics_token(TEST_ANALYTICS_TOKEN, TEST_DEVICE_TOKEN)
 
     warning_logger.assert_called_once_with(
-        "Found token not default configuration compliant in first step.",
+        "Found token that is not compliant with the default configuration in the first step.",
         extra=dict(
             env=config.ENV.value,
             bit0=first_read_data.bit0,
@@ -242,7 +242,7 @@ async def test_authorize_analytics_token_second_step_not_compliant(
         await _authorize_analytics_token(TEST_ANALYTICS_TOKEN, TEST_DEVICE_TOKEN)
 
     warning_logger.assert_called_once_with(
-        "Found token not default configuration compliant in second step.",
+        "Found token that is not compliant with the default configuration in the second step.",
         extra=dict(
             env=config.ENV.value,
             bit0=second_read_data.bit0,
@@ -301,7 +301,7 @@ async def test_authorize_analytics_token_third_step_not_compliant(
         await _authorize_analytics_token(TEST_ANALYTICS_TOKEN, TEST_DEVICE_TOKEN)
 
     warning_logger.assert_called_once_with(
-        "Found token not authorization configuration compliant in third step.",
+        "Found token that is not authorized in the third step.",
         extra=dict(
             env=config.ENV.value,
             bit0=third_read_data.bit0,

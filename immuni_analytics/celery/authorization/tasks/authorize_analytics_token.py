@@ -48,7 +48,7 @@ def authorize_analytics_token(analytics_token: str, device_token: str) -> None: 
 
 async def _authorize_analytics_token(analytics_token: str, device_token: str) -> None:
     """
-    Check that the device token comes from a genuine device that is not sending concurrent
+    Check if the device token comes from a genuine device that is not sending concurrent
     calls. In case no anomalies are found authorize the analytics token to perform
     uploads of operational info.
 
@@ -102,7 +102,7 @@ async def _first_step(device_token: str) -> None:
 
     if not device_check_data.is_default_configuration:
         _LOGGER.warning(
-            "Found token not default configuration compliant in first step.",
+            "Found token that is not compliant with the default configuration in the first step.",
             extra=dict(
                 env=config.ENV.value,
                 bit0=device_check_data.bit0,
@@ -124,7 +124,7 @@ async def _second_step(device_token: str) -> None:
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_default_configuration:
         _LOGGER.warning(
-            "Found token not default configuration compliant in second step.",
+            "Found token that is not compliant with the default configuration in the second step.",
             extra=dict(
                 env=config.ENV.value,
                 bit0=device_check_data.bit0,
@@ -148,7 +148,7 @@ async def _third_step(device_token: str) -> None:
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_authorized:
         _LOGGER.warning(
-            "Found token not authorization configuration compliant in third step.",
+            "Found token that is not authorized in the third step.",
             extra=dict(
                 env=config.ENV.value,
                 bit0=device_check_data.bit0,
@@ -163,8 +163,10 @@ async def _third_step(device_token: str) -> None:
 
 async def _blacklist_device(device_token: str) -> None:
     """
-    Set the both DeviceCheck bits to True, a configuration that indicates the device is blacklisted
+    Set both DeviceCheck bits to True, a configuration that indicates the device is blacklisted
     and cannot send analytics anymore.
+
+    :param device_token: the device token of the device to blacklist.
     """
     # Do not blacklist devices if we are not in release environment otherwise we need to
     # manually unlock developer devices

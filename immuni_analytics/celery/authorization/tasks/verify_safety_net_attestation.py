@@ -37,6 +37,11 @@ def verify_safety_net_attestation(
 ) -> None:  # pragma: no cover
     """
     Celery doesn't support async functions, so we wrap it around asyncio.run.
+
+    :param safety_net_attestation: the SafetyNet attestation to validate.
+    :param salt: the salt sent in the request.
+    :param operational_info: the device operational information.
+    :param last_risky_exposure_on: the last risky exposure isoformat date.
     """
     asyncio.run(
         _verify_safety_net_attestation(

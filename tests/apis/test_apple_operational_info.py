@@ -46,8 +46,8 @@ def headers() -> Dict[str, str]:
 async def test_apple_operational_info_with_exposure(
     redis_logger_info: MagicMock,
     client: TestClient,
-    operational_info: Dict[str, Any],
     headers: Dict[str, str],
+    operational_info: Dict[str, Any],
 ) -> None:
     # authorize the current token for the upload
     await managers.analytics_redis.sadd(
@@ -63,13 +63,13 @@ async def test_apple_operational_info_with_exposure(
     assert (
         json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
+            bluetooth_active=operational_info["bluetooth_active"],
+            exposure_notification=operational_info["exposure_notification"],
+            exposure_permission=operational_info["exposure_permission"],
+            last_risky_exposure_on=date.fromisoformat(operational_info["last_risky_exposure_on"]),
+            notification_permission=operational_info["notification_permission"],
             platform=Platform.IOS,
             province=operational_info["province"],
-            exposure_permission=operational_info["exposure_permission"],
-            bluetooth_active=operational_info["bluetooth_active"],
-            notification_permission=operational_info["notification_permission"],
-            exposure_notification=operational_info["exposure_notification"],
-            last_risky_exposure_on=date.fromisoformat(operational_info["last_risky_exposure_on"]),
         ).to_dict()
     )
 
@@ -81,7 +81,7 @@ async def test_apple_operational_info_with_exposure(
 
 
 async def test_apple_operational_info_missing_token(
-    client: TestClient, operational_info: Dict[str, Any], headers: Dict[str, str]
+    client: TestClient, headers: Dict[str, str], operational_info: Dict[str, Any]
 ) -> None:
     response = await client.post(
         "/v1/analytics/apple/operational-info", json=operational_info, headers=headers,
@@ -94,8 +94,8 @@ async def test_apple_operational_info_missing_token(
 async def test_apple_operational_info_without_exposure(
     redis_logger_info: MagicMock,
     client: TestClient,
-    operational_info: Dict[str, Any],
     headers: Dict[str, str],
+    operational_info: Dict[str, Any],
 ) -> None:
     assert OperationalInfo.objects.count() == 0
     operational_info["exposure_notification"] = 0
@@ -114,13 +114,13 @@ async def test_apple_operational_info_without_exposure(
     assert (
         json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
         == OperationalInfo(
+            bluetooth_active=operational_info["bluetooth_active"],
+            exposure_notification=operational_info["exposure_notification"],
+            exposure_permission=operational_info["exposure_permission"],
+            last_risky_exposure_on=None,
+            notification_permission=operational_info["notification_permission"],
             platform=Platform.IOS,
             province=operational_info["province"],
-            exposure_permission=operational_info["exposure_permission"],
-            bluetooth_active=operational_info["bluetooth_active"],
-            notification_permission=operational_info["notification_permission"],
-            exposure_notification=operational_info["exposure_notification"],
-            last_risky_exposure_on=None,
         ).to_dict()
     )
 
@@ -135,8 +135,8 @@ async def test_apple_operational_info_without_exposure(
 async def test_apple_operational_info_dummy(
     redis_logger_info: MagicMock,
     client: TestClient,
-    operational_info: Dict[str, Any],
     headers: Dict[str, str],
+    operational_info: Dict[str, Any],
 ) -> None:
     headers["Immuni-Dummy-Data"] = "1"
     response = await client.post(
@@ -154,7 +154,7 @@ async def test_apple_operational_info_dummy(
     [{k: v for k, v in OPERATIONAL_INFO.items() if k != excluded} for excluded in OPERATIONAL_INFO],
 )
 async def test_apple_operational_info_bad_request(
-    client: TestClient, bad_data: Dict[str, Any], headers: Dict[str, str]
+    bad_data: Dict[str, Any], client: TestClient, headers: Dict[str, str]
 ) -> None:
     response = await client.post(
         "/v1/analytics/apple/operational-info", json=bad_data, headers=headers
