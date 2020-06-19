@@ -190,3 +190,4 @@ async def _add_analytics_token_to_redis(analytics_token: str) -> None:
     :param analytics_token: the analytics token to authorize for upload.
     """
     await managers.analytics_redis.sadd(analytics_token, *get_all_authorizations_for_upload())
+    _LOGGER.info("New authorized analytics token.", extra=dict(analytics_token=analytics_token))
