@@ -65,7 +65,7 @@ def _generate_common_payload() -> Dict[str, Any]:
     """
     Create the common part of the payload to be sent to the DeviceCheckApi.
 
-    :return: a dictionary containing the transaction id and the current timestamp in milliseconds.
+    :return: the dictionary containing the transaction id and the current timestamp in milliseconds.
     """
     return {
         "transaction_id": str(uuid.uuid4()),
@@ -79,7 +79,7 @@ async def fetch_device_check_bits(token: str) -> DeviceCheckData:
     Fetch the two bits from the DeviceCheck API.
 
     :param token: the base64 encoded device token.
-    :return: a DeviceCheckData object representing the device bit state.
+    :return: the DeviceCheckData object representing the device bit state.
     """
 
     payload = {

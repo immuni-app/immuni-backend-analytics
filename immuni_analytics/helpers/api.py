@@ -23,15 +23,20 @@ def inject_operational_info(
     f: Callable[..., Coroutine[Any, Any, HTTPResponse]]
 ) -> Callable[..., Coroutine[Any, Any, HTTPResponse]]:
     """
-    Validates all of the operational info parameters and injects them as
-     a single model to the decorated function.
-    :param f: The function to inject operational info to.
-    :return: The decorated function.
+    Validates all of the operational info parameters and injects them as a single model to the
+    decorated function.
+
+    :param f: the function to inject operational info to.
+    :return: the decorated function.
     """
 
     async def _wrapper(*args: Any, **kwargs: Any) -> HTTPResponse:
         """
-        Validates and prepares the OperationalInfo document to be used by the decorated function.
+        Validate and prepare the OperationalInfo document to be used by the decorated function.
+
+        :param args: the positional arguments.
+        :param kwargs: the keyword arguments.
+        :return: the function HTTPResponse return value.
         """
         kwargs["operational_info"] = OperationalInfo(
             platform=Platform.IOS,

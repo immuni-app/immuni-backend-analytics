@@ -40,7 +40,7 @@ def get_upload_authorization_member_for_next_month(with_exposure: bool) -> str:
 
     :param with_exposure: whether the key is associated to the tokens allowed to perform an upload
       with exposure or not.
-    :return: the redis key
+    :return: the redis key.
     """
     return f"{next_month().isoformat()}:{int(with_exposure)}"
 
@@ -75,10 +75,9 @@ async def is_upload_authorized_for_token(analytics_token: str) -> bool:
 
 async def enqueue_operational_info(operational_info: OperationalInfo) -> None:
     """
-    Stores the given operational info in the queue that will later
-     be processed by the celery workers.
+    Store the given operational info in the queue eventually processed by the celery workers.
 
-    :param operational_info: The operational info to be stored.
+    :param operational_info: the operational info to store.
     """
     await managers.analytics_redis.rpush(
         config.OPERATIONAL_INFO_QUEUE_KEY, json.dumps(operational_info.to_dict())

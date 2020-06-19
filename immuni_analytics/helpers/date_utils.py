@@ -16,13 +16,17 @@ from datetime import date, timedelta
 
 def current_month() -> date:
     """
-    Returns a date object representing the first day of the current month
+    The date object representing the first day of the current month.
+
+    :return: the date object representing the first day of the current month.
     """
     return date.today().replace(day=1)
 
 
 def next_month() -> date:
     """
-    Returns a date object representing the first day of the next month
+    The date object representing the first day of the next month.
+
+    :return: the date object representing the first day of the next month.
     """
     return (current_month() + timedelta(days=31)).replace(day=1)
