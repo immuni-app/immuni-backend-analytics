@@ -68,8 +68,8 @@ class ExposurePayload(AnalyticsDocument):
 
     province = StringField(required=True)
     # NOTE: the field is marked as not required to support any data forwarded by the
-    # first version of the Exposure Ingestion Service, which did not include symptoms_started_on.
-    # It will be changed as soon as all the old data have been collected.
+    #  first version of the Exposure Ingestion Service, which did not include symptoms_started_on.
+    #  It will be changed as soon as all the old data have been collected.
     symptoms_started_on = DateField(required=False)
     exposure_detection_summaries = EmbeddedDocumentListField(
         ExposureDetectionSummary, required=False, default=[]

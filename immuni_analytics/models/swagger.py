@@ -16,7 +16,7 @@ from sanic_openapi import doc
 
 class AuthorizationBody:
     """
-    Doc model for the token authorization request body.
+    Documentation class for the token authorization request body.
     """
 
     analytics_token = doc.String(
@@ -27,7 +27,7 @@ class AuthorizationBody:
 
 class AppleOperationalInfo:
     """
-    Doc model for the operational info upload request body.
+    Documentation class for the operational info upload request body sent by iOS devices.
     """
 
     province = doc.String("The user's province of residence.")
@@ -53,7 +53,7 @@ class AppleOperationalInfo:
 
 class GoogleOperationalInfo(AppleOperationalInfo):
     """
-    Doc model for the operational info upload request body sent by Android devices (google).
+    Documentation class for the operational info upload request body sent by Android devices.
     """
 
     salt = doc.String("A random string sent by the client. Used to avoid replay attacks.")

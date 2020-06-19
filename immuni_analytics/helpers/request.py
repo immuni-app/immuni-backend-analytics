@@ -67,7 +67,7 @@ async def post_with_retry(
     """
     Wrapper around aiohttp post with retry strategy.
 
-    :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError
+    :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError.
     :return: the client response if successful.
     """
     params: Dict[str, Any] = dict(
