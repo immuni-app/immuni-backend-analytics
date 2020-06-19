@@ -60,8 +60,8 @@ async def _verify_safety_net_attestation(
     last_risky_exposure_on: str,
 ) -> None:
     """
-    Verify that the safety_net_attestation is genuine. Prevent race conditions and save the
-    operational_info.
+    Verify that the safety_net_attestation is genuine.
+    Prevent race conditions and save the operational_info.
 
     :param safety_net_attestation: the SafetyNet attestation to validate.
     :param salt: the salt sent in the request.
@@ -75,7 +75,6 @@ async def _verify_safety_net_attestation(
     except SafetyNetVerificationError:
         return
 
-    # this salt cannot be used for the next SAFETY_NET_MAX_SKEW_MINUTES
     if await managers.analytics_redis.set(
         key=safety_net.get_redis_key(salt),
         value=1,

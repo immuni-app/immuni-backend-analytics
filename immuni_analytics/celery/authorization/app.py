@@ -23,7 +23,7 @@ from immuni_common.celery import CeleryApp
 
 
 @worker_process_init.connect
-def worker_process_init_listener_authorization(**kwargs: Any) -> None:  # pragma: no cover
+def worker_process_init_listener(**kwargs: Any) -> None:  # pragma: no cover
     """
     Listener on worker initialization to properly initialize the project's managers.
 
@@ -34,7 +34,7 @@ def worker_process_init_listener_authorization(**kwargs: Any) -> None:  # pragma
 
 
 @worker_process_shutdown.connect
-def worker_process_shutdown_listener_authorization(**kwargs: Any) -> None:  # pragma: no cover
+def worker_process_shutdown_listener(**kwargs: Any) -> None:  # pragma: no cover
     """
     Listener on worker shutdown to properly cleanup the project's managers.
 

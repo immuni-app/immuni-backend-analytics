@@ -31,13 +31,15 @@ _LOGGER = logging.getLogger(__name__)
 @celery_app.task()
 def store_exposure_payloads() -> None:  # pragma: no cover
     """
-     Celery doesn't support async functions, so we wrap it around asyncio.run.
-     """
+    Celery doesn't support async functions, so we wrap it around asyncio.run.
+    """
     asyncio.run(_store_exposure_payloads())
 
 
 class InvalidFormatException(ImmuniException):
-    """Raised when the ingested date format is invalid"""
+    """
+    Raised when the ingested date format is invalid.
+    """
 
 
 async def _store_exposure_payloads() -> None:
@@ -45,7 +47,6 @@ async def _store_exposure_payloads() -> None:
     Retrieve up to a fixed number of exposure payload data and save it into mongo.
     If something goes wrong, push the data into the error queue.
     """
-    _LOGGER.info("Store exposure payload periodic task started.")
     pipe = managers.analytics_redis.pipeline()
     pipe.lrange(
         config.EXPOSURE_PAYLOAD_QUEUE_KEY, 0, config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS - 1
@@ -58,7 +59,7 @@ async def _store_exposure_payloads() -> None:
 
     for element in ingested_data:
         try:
-            exposure_payload = extract_payload(element)
+            exposure_payload = _load_exposure_payload(element)
         except (
             MongoengineValidationError,
             MarshmallowValidationError,
@@ -85,13 +86,13 @@ async def _store_exposure_payloads() -> None:
     )
 
 
-def extract_payload(exposure_payload_dict: str) -> ExposurePayload:
+def _load_exposure_payload(exposure_payload_dict: str) -> ExposurePayload:
     """
-    Convert and validate a dictionary into an ExposurePayload
+    Convert and validate a dictionary into an ExposurePayload object.
 
-    :param exposure_payload_dict: a dictionary to be converted into ExposurePayload
-    :raises: InvalidFormatException
-    :return: the converted ExposurePayload
+    :param exposure_payload_dict: the dictionary to be converted into an ExposurePayload object.
+    :return: the converted ExposurePayload object.
+    :raises: InvalidFormatException.
     """
     json_decoded = json.loads(exposure_payload_dict)
     if not (

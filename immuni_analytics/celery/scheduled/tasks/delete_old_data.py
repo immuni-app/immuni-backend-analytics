@@ -25,9 +25,8 @@ _LOGGER = logging.getLogger(__name__)
 @celery_app.task()
 def delete_old_data() -> None:
     """
-    Deletes all ExposurePayload and OperationalInfo objects older than the retention days.
+    Delete all ExposurePayload and OperationalInfo objects older than the configured retention days.
     """
-    _LOGGER.info("Data deletion started.",)
     reference_date = datetime.utcnow() - timedelta(days=config.DATA_RETENTION_DAYS)
     ExposurePayload.delete_older_than(reference_date)
     OperationalInfo.delete_older_than(reference_date)
