@@ -44,15 +44,18 @@ class DeviceCheckData:
     @property
     def used_in_current_month(self) -> bool:
         """
-        Whether the device has been already used to validate a token in the current month
+        Whether the device has been already used to validate a token in the current month.
+
+        :return: True if the device has already been used to validate a token in the current month,
+          False otherwise.
         """
         return self.last_update_time is not None and current_month() <= self._last_update_month
 
     @property
     def is_default_configuration(self) -> bool:
         """
-        Check if the bits are set as expected in the first or second read operations.
-        Namely, if both bits are False.
+        Check if the bits are set as expected (i.e., both False) in the first or second read
+        operations.
 
         :return: True if the configuration is correct, False otherwise.
         """
@@ -71,8 +74,7 @@ class DeviceCheckData:
     @property
     def is_blacklisted(self) -> bool:
         """
-        Check if the bits are as expected for a blacklisted device.
-        Namely, if both bits are True.
+        Check if the bits are as expected (i.e., both True) for a blacklisted device.
 
         :return: True if the if the device is blacklisted, False otherwise.
         """
