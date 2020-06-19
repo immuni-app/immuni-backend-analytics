@@ -13,7 +13,7 @@
 
 import json
 from typing import Any, Callable, Dict, List
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from pytest import mark
 
@@ -52,19 +52,9 @@ async def test_ingest_data(
 
         assert ExposurePayload.objects.count() == ingested_data
         remaining_elements = max(0, n_elements - config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={
-                        "ingested_data": ingested_data,
-                        "ingestion_queue_length": remaining_elements,
-                    },
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": ingested_data, "ingestion_queue_length": remaining_elements},
         )
 
 
@@ -89,16 +79,9 @@ async def test_json_error(
         assert ExposurePayload.objects.count() == 1
 
         assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={"ingested_data": 1, "ingestion_queue_length": 2},
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": 1, "ingestion_queue_length": 2},
         )
         logger_warning.assert_called_once_with(
             "Found ingested data with bad format.", extra={"bad_format_data": 1}
@@ -127,16 +110,9 @@ async def test_validation_error(
         assert ExposurePayload.objects.count() == 1
 
         assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={"ingested_data": 1, "ingestion_queue_length": 1},
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": 1, "ingestion_queue_length": 1},
         )
         logger_warning.assert_called_once_with(
             "Found ingested data with bad format.", extra={"bad_format_data": 1}
@@ -169,16 +145,9 @@ async def test_wrong_exposure_data_error(
         assert ExposurePayload.objects.count() == 0
 
         assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 5
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={"ingested_data": 0, "ingestion_queue_length": 0},
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": 0, "ingestion_queue_length": 0},
         )
         logger_warning.assert_called_once_with(
             "Found ingested data with bad format.", extra={"bad_format_data": 5}
@@ -207,16 +176,9 @@ async def test_empty_exposure_info_summary(
         assert ExposurePayload.objects.count() == 1
 
         assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={"ingested_data": 1, "ingestion_queue_length": 0},
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": 1, "ingestion_queue_length": 0},
         )
         logger_warning.assert_not_called()
 
@@ -243,16 +205,9 @@ async def test_empty_exposure_info(
         assert ExposurePayload.objects.count() == 1
 
         assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={"ingested_data": 1, "ingestion_queue_length": 0},
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": 1, "ingestion_queue_length": 0},
         )
         logger_warning.assert_not_called()
 
@@ -279,16 +234,9 @@ async def test_missing_symptoms_started_on(
         assert ExposurePayload.objects.count() == 1
 
         assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={"ingested_data": 1, "ingestion_queue_length": 0},
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": 1, "ingestion_queue_length": 0},
         )
         logger_warning.assert_not_called()
 
@@ -317,16 +265,9 @@ async def test_wrong_symptoms_started_on(
         assert ExposurePayload.objects.count() == 0
         assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
 
-        assert logger_info.call_count == 2
-        logger_info.assert_has_calls(
-            [
-                call("Store exposure payload periodic task started."),
-                call(
-                    "Store exposure payload periodic task completed.",
-                    extra={"ingested_data": 0, "ingestion_queue_length": 0},
-                ),
-            ],
-            any_order=False,
+        logger_info.assert_called_once_with(
+            "Store exposure payload periodic task completed.",
+            extra={"ingested_data": 0, "ingestion_queue_length": 0},
         )
         logger_warning.assert_called_once_with(
             "Found ingested data with bad format.", extra={"bad_format_data": 1}

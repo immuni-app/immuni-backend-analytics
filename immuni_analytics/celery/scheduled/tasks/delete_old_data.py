@@ -11,15 +11,12 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import logging
 from datetime import datetime, timedelta
 
 from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
 from immuni_analytics.models.operational_info import OperationalInfo
-
-_LOGGER = logging.getLogger(__name__)
 
 
 @celery_app.task()

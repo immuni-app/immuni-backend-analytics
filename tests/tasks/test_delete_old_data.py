@@ -23,11 +23,9 @@ from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
 
 
-@patch("immuni_analytics.celery.scheduled.tasks.delete_old_data._LOGGER.info")
 @patch("immuni_analytics.models.analytics_document._LOGGER.info")
 async def test_delete_old_data(
     model_logger_info: MagicMock,
-    task_logger_info: MagicMock,
     generate_mongo_data: Callable[..., None],
     setup_exposure_payload_celery_app: Celery,
 ) -> None:
@@ -44,7 +42,6 @@ async def test_delete_old_data(
             delete_old_data.delay()
 
             assert ExposurePayload.objects.count() == 10
-        task_logger_info.assert_called_once_with("Data deletion started.")
         assert model_logger_info.call_count == 2
         model_logger_info.assert_has_calls(
             (
