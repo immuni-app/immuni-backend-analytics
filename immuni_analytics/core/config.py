@@ -61,7 +61,8 @@ APPLE_DEVICE_CHECK_URL: str = config(
 )
 APPLE_KEY_ID: str = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
-CHECK_TIME_SECONDS: int = config("CHECK_TIME_SECONDS", cast=int, default=7)
+CHECK_TIME_SECONDS_MAX: int = config("CHECK_TIME_SECONDS_MAX", cast=int, default=10)
+CHECK_TIME_SECONDS_MIN: int = config("CHECK_TIME_SECONDS_MIN", cast=int, default=7)
 DATA_RETENTION_DAYS: int = config("DATA_RETENTION_DAYS", cast=int, default=30)
 DEVICE_TOKEN_MAX_LENGTH: int = config("DEVICE_TOKEN_MAX_LENGTH", cast=int, default=10_000)
 DELETE_OLD_DATA_PERIODICITY: str = config(
@@ -75,7 +76,8 @@ EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS: int = config(
 OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS: int = config(
     "OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS", cast=int, default=100
 )
-READ_TIME_SECONDS: int = config("READ_TIME_SECONDS", cast=int, default=3)
+READ_TIME_SECONDS_MAX: int = config("READ_TIME_SECONDS_MAX", cast=int, default=3)
+READ_TIME_SECONDS_MIN: int = config("READ_TIME_SECONDS_MIN", cast=int, default=0)
 REQUESTS_TIMEOUT_SECONDS: int = config("REQUESTS_TIMEOUT_SECONDS", cast=int, default=5)
 SAFETY_NET_MAX_SKEW_MINUTES: int = config("SAFETY_NET_MAX_SKEW_MINUTES", cast=int, default=10)
 STORE_INGESTED_DATA_PERIODICITY: str = config(

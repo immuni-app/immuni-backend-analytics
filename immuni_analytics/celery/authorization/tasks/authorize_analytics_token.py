@@ -55,15 +55,19 @@ async def _authorize_analytics_token(analytics_token: str, device_token: str) ->
     :param analytics_token: the analytics token to authorize.
     :param device_token: the device token to check against the DeviceCheck api.
     """
+    # NOTE: bandit complains about using random.uniform stating "[B311:blacklist] Standard
+    #  pseudo-random generators are not suitable for security/cryptographic purposes.".
+    #  The "waiting for a random time" is not a security/cryptographic action, thus the issue is
+    #  intentionally waived.
     try:
-        # NOTE: bandit complains about using random.uniform stating "[B311:blacklist] Standard
-        #  pseudo-random generators are not suitable for security/cryptographic purposes.".
-        #  The "waiting for a random time" is not a security/cryptographic action, thus the issue is
-        #  intentionally waived.
         await _first_step(device_token)
-        await asyncio.sleep(random.uniform(1, config.CHECK_TIME_SECONDS))  # nosec
+        await asyncio.sleep(
+            random.uniform(config.CHECK_TIME_SECONDS_MIN, config.CHECK_TIME_SECONDS_MAX)
+        )
         await _second_step(device_token)
-        await asyncio.sleep(random.uniform(1, config.READ_TIME_SECONDS))  # nosec
+        await asyncio.sleep(
+            random.uniform(config.READ_TIME_SECONDS_MIN, config.READ_TIME_SECONDS_MAX)
+        )
         await _third_step(device_token)
 
     except BlacklistDeviceException:
