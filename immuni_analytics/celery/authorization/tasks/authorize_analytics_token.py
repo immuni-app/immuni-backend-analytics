@@ -47,7 +47,7 @@ def authorize_analytics_token(analytics_token: str, device_token: str) -> None: 
     """
     Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
-    asyncio.run_until_complete(_authorize_analytics_token(analytics_token, device_token))
+    asyncio.run(_authorize_analytics_token(analytics_token, device_token))
 
 
 async def _authorize_analytics_token(analytics_token: str, device_token: str) -> None:

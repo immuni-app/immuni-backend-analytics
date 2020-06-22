@@ -62,7 +62,7 @@ def worker_process_init_listener(**kwargs: Any) -> None:  # pragma: no cover
     :param kwargs: the keyword arguments passed by Celery, ignored in this case.
     """
 
-    asyncio.run_until_complete(managers.initialize(initialize_mongo=True))
+    asyncio.run(managers.initialize(initialize_mongo=True))
 
 
 @worker_process_shutdown.connect
@@ -72,7 +72,7 @@ def worker_process_shutdown_listener(**kwargs: Any) -> None:  # pragma: no cover
 
     :param kwargs: the keyword arguments passed by Celery, ignored in this case.
     """
-    asyncio.run_until_complete(managers.teardown())
+    asyncio.run(managers.teardown())
 
 
 celery_app = CeleryApp(

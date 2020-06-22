@@ -39,7 +39,7 @@ def store_exposure_payloads() -> None:  # pragma: no cover
     """
     Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
-    asyncio.run_until_complete(_store_exposure_payloads())
+    asyncio.run(_store_exposure_payloads())
 
 
 async def _store_exposure_payloads() -> None:
