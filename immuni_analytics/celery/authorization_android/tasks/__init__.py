@@ -10,14 +10,3 @@
 #  GNU Affero General Public License for more details.
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-from immuni_common.models.enums import EnvarEnum
-
-
-class CeleryAppName(EnvarEnum):
-    """
-    Enumeration of the possible celery app names for the analytics service.
-    """
-
-    AUTHORIZATION = "authorization"
-    SCHEDULED = "scheduled"

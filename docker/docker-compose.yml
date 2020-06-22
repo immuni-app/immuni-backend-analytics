@@ -4,9 +4,7 @@ x-common-environment: &common-environment
   ENV: development
   ANALYTICS_MONGO_URL: "mongodb://mongo:27017"
   ANALYTICS_BROKER_REDIS_URL: "redis://analytics_redis:6379/0"
-  CELERY_BROKER_REDIS_URL_AUTHORIZATION: "redis://celery_redis:6379/0"
   CELERY_BROKER_REDIS_URL_SCHEDULED: "redis://celery_redis:6379/0"
-  CELERY_BROKER_REDIS_URL_OPERATIONAL_INFO: "redis://celery_redis:6379/0"
 
 x-common-service: &common-service
   environment:
@@ -38,11 +36,22 @@ services:
     build:
       <<: *common-build
       target: beat
-  worker_authorization:
+  worker_authorization_ios:
     <<: *common-service
     environment:
       <<: *common-environment
-      CELERY_APP_NAME: "authorization"
+      CELERY_APP_NAME: "authorization_ios"
+      CELERY_BROKER_REDIS_URL_AUTHORIZATION_IOS: "redis://celery_redis:6379/0"
+    image: worker
+    build:
+      <<: *common-build
+      target: worker
+  worker_authorization_android:
+    <<: *common-service
+    environment:
+      <<: *common-environment
+      CELERY_APP_NAME: "authorization_android"
+      CELERY_BROKER_REDIS_URL_AUTHORIZATION_ANDROID: "redis://celery_redis:6379/0"
     image: worker
     build:
       <<: *common-build

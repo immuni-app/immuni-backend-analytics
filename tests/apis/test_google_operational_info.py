@@ -21,7 +21,7 @@ from freezegun import freeze_time
 from pytest import fixture, mark
 from pytest_sanic.utils import TestClient
 
-from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation import (
+from immuni_analytics.celery.authorization_android.tasks.verify_safety_net_attestation import (
     _verify_safety_net_attestation,
 )
 from immuni_analytics.core import config

@@ -14,7 +14,7 @@
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation import (
+from immuni_analytics.celery.authorization_android.tasks.verify_safety_net_attestation import (
     _verify_safety_net_attestation,
 )
 from immuni_analytics.core import config
@@ -24,7 +24,7 @@ from immuni_analytics.models.operational_info import OperationalInfo
 
 
 @patch(
-    "immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation."
+    "immuni_analytics.celery.authorization_android.tasks.verify_safety_net_attestation."
     "safety_net.verify_attestation",
     side_effect=SafetyNetVerificationError(),
 )
@@ -43,11 +43,14 @@ async def test_verify_safety_net_attestation_verification_error(
 
 
 @patch(
-    "immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation."
+    "immuni_analytics.celery.authorization_android.tasks.verify_safety_net_attestation."
     "safety_net.verify_attestation",
     MagicMock(),
 )
-@patch("immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation._LOGGER.warning")
+@patch(
+    "immuni_analytics.celery.authorization_android.tasks.verify_safety_net_attestation."
+    "_LOGGER.warning"
+)
 async def test_verify_safety_net_attestation_used_salt(
     warning_logger: MagicMock, operational_info: Dict[str, Any]
 ) -> None:
