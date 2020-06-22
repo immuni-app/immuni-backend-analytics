@@ -24,6 +24,7 @@ from immuni_analytics.core import config
 from immuni_analytics.helpers.safety_net import (
     MalformedJwsToken,
     SafetyNetVerificationError,
+    _decode_jws,
     _get_certificates,
     _load_leaf_certificate,
     _parse_jws_part,
@@ -31,7 +32,7 @@ from immuni_analytics.helpers.safety_net import (
     _verify_signature,
     get_redis_key,
     verify_attestation,
-    _decode_jws)
+)
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.models.enums import Platform
 from tests.fixtures.safety_net import POST_TIMESTAMP, TEST_APK_DIGEST

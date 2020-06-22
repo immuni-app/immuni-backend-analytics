@@ -16,7 +16,7 @@ from typing import Any
 
 from celery.signals import worker_process_init, worker_process_shutdown
 
-from immuni_analytics.celery.authorization import tasks
+from immuni_analytics.celery.authorization_ios import tasks
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_common.celery import CeleryApp
@@ -34,7 +34,7 @@ def worker_process_init_listener(**kwargs: Any) -> None:  # pragma: no cover
 
 
 @worker_process_shutdown.connect
-def worker_process_shutdown_listener(**kwargs: Any) -> None:  # pragma: no cover
+def worker_process_shutdown_listener(**kwargs: Any) -> None:  # pragma: no cove˚r
     """
     Listener on worker shutdown to properly cleanup the project's managers.
 
@@ -44,8 +44,8 @@ def worker_process_shutdown_listener(**kwargs: Any) -> None:  # pragma: no cover
 
 
 celery_app = CeleryApp(
-    service_dir_name="immuni_analytics.celery.authorization",
-    broker_redis_url=config.CELERY_BROKER_REDIS_URL_AUTHORIZATION,
+    service_dir_name="immuni_analytics.celery.authorization_ios",
+    broker_redis_url=config.CELERY_BROKER_REDIS_URL_AUTHORIZATION_IOS,
     always_eager=config.CELERY_ALWAYS_EAGER,
     tasks_module=tasks,
 )

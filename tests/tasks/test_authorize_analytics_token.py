@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 from freezegun import freeze_time
 from pytest import mark
 
-from immuni_analytics.celery.authorization.tasks.authorize_analytics_token import (
+from immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token import (
     _authorize_analytics_token,
     _blacklist_device,
 )
@@ -33,12 +33,12 @@ TEST_DEVICE_TOKEN = "TEST_DEVICE_TOKEN"
 
 @freeze_time("2020-01-31")
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token." "config.ENV",
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token." "config.ENV",
     Environment.RELEASE,
 )
 @patch("asyncio.sleep", AsyncMock())
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
     "set_device_check_bits",
     return_value=AsyncMock(),
 )
@@ -64,7 +64,7 @@ async def test_authorize_analytics_token(
     third_read_data: DeviceCheckData,
 ) -> None:
     with patch(
-        "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+        "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
         "fetch_device_check_bits",
         AsyncMock(side_effect=[first_read_data, second_read_data, third_read_data]),
     ):
@@ -86,16 +86,16 @@ async def test_authorize_analytics_token(
 
 @freeze_time("2020-01-31")
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token." "config.ENV",
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token." "config.ENV",
     Environment.RELEASE,
 )
 @patch("asyncio.sleep", AsyncMock())
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
     "set_device_check_bits",
     AsyncMock(),
 )
-@patch("immuni_analytics.celery.authorization.tasks.authorize_analytics_token._LOGGER.warning")
+@patch("immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token._LOGGER.warning")
 @mark.parametrize(
     "first_read_data,second_read_data,third_read_data",
     [
@@ -118,7 +118,7 @@ async def test_authorize_analytics_token_used_in_current_month(
     third_read_data: RuntimeError,
 ) -> None:
     with patch(
-        "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+        "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
         "fetch_device_check_bits",
         AsyncMock(side_effect=[first_read_data, second_read_data, third_read_data]),
     ):
@@ -138,16 +138,16 @@ async def test_authorize_analytics_token_used_in_current_month(
 
 @freeze_time("2020-01-31")
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token." "config.ENV",
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token." "config.ENV",
     Environment.RELEASE,
 )
 @patch("asyncio.sleep", AsyncMock())
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
     "set_device_check_bits",
     return_value=AsyncMock(),
 )
-@patch("immuni_analytics.celery.authorization.tasks.authorize_analytics_token._LOGGER.warning")
+@patch("immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token._LOGGER.warning")
 @mark.parametrize(
     "first_read_data,second_read_data,third_read_data",
     [
@@ -176,7 +176,7 @@ async def test_authorize_analytics_token_first_step_not_compliant(
     third_read_data: RuntimeError,
 ) -> None:
     with patch(
-        "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+        "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
         "fetch_device_check_bits",
         AsyncMock(side_effect=[first_read_data, second_read_data, third_read_data]),
     ):
@@ -197,16 +197,16 @@ async def test_authorize_analytics_token_first_step_not_compliant(
 
 @freeze_time("2020-01-31")
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token." "config.ENV",
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token." "config.ENV",
     Environment.RELEASE,
 )
 @patch("asyncio.sleep", AsyncMock())
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
     "set_device_check_bits",
     return_value=AsyncMock(),
 )
-@patch("immuni_analytics.celery.authorization.tasks.authorize_analytics_token._LOGGER.warning")
+@patch("immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token._LOGGER.warning")
 @mark.parametrize(
     "first_read_data,second_read_data,third_read_data",
     [
@@ -235,7 +235,7 @@ async def test_authorize_analytics_token_second_step_not_compliant(
     third_read_data: RuntimeError,
 ) -> None:
     with patch(
-        "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+        "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
         "fetch_device_check_bits",
         AsyncMock(side_effect=[first_read_data, second_read_data, third_read_data]),
     ):
@@ -256,16 +256,16 @@ async def test_authorize_analytics_token_second_step_not_compliant(
 
 @freeze_time("2020-01-31")
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token." "config.ENV",
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token." "config.ENV",
     Environment.RELEASE,
 )
 @patch("asyncio.sleep", AsyncMock())
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
     "set_device_check_bits",
     return_value=AsyncMock(),
 )
-@patch("immuni_analytics.celery.authorization.tasks.authorize_analytics_token._LOGGER.warning")
+@patch("immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token._LOGGER.warning")
 @mark.parametrize(
     "first_read_data,second_read_data,third_read_data",
     [
@@ -294,7 +294,7 @@ async def test_authorize_analytics_token_third_step_not_compliant(
     third_read_data: DeviceCheckData,
 ) -> None:
     with patch(
-        "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+        "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
         "fetch_device_check_bits",
         AsyncMock(side_effect=[first_read_data, second_read_data, third_read_data]),
     ):
@@ -322,7 +322,7 @@ async def test_authorize_analytics_token_third_step_not_compliant(
 
 @freeze_time("2020-01-31")
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token." "config.ENV",
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token." "config.ENV",
     Environment.RELEASE,
 )
 @patch("asyncio.sleep", AsyncMock())
@@ -374,12 +374,12 @@ async def test_authorize_analytics_token_bad_format(
     second_set_data: Union[None, DeviceCheckApiError, RuntimeError],
 ) -> None:
     with patch(
-        "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+        "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
         "fetch_device_check_bits",
         AsyncMock(side_effect=[first_read_data, second_read_data, third_read_data]),
     ):
         with patch(
-            "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+            "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
             "set_device_check_bits",
             AsyncMock(side_effect=[first_set_data, second_set_data]),
         ):
@@ -390,7 +390,7 @@ async def test_authorize_analytics_token_bad_format(
 
 @freeze_time("2020-01-31")
 @patch(
-    "immuni_analytics.celery.authorization.tasks.authorize_analytics_token."
+    "immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token."
     "set_device_check_bits",
     return_value=AsyncMock(),
 )

@@ -19,7 +19,7 @@ from unittest.mock import patch
 from pytest import mark
 from pytest_sanic.utils import TestClient
 
-from immuni_analytics.celery.authorization.tasks.authorize_analytics_token import (
+from immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token import (
     _add_analytics_token_to_redis,
 )
 from immuni_analytics.core.managers import managers

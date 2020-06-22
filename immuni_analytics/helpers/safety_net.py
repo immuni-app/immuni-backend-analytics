@@ -87,11 +87,7 @@ def _decode_jws(jws_token: str) -> DecodedJWS:
                 payload=_parse_jws_part(parts[1]),
                 signature=parts[2],
             )
-        except (
-            binascii.Error,
-            JSONDecodeError,
-            UnicodeDecodeError,
-        ) as exc:
+        except (binascii.Error, JSONDecodeError, UnicodeDecodeError,) as exc:
             _LOGGER.warning(
                 "Could not decode jws token.", extra=dict(error=str(exc), jws_token=jws_token),
             )

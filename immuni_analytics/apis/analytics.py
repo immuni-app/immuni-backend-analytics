@@ -23,11 +23,11 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from sanic_openapi import doc
 
-from immuni_analytics.celery.authorization.tasks.authorize_analytics_token import (
-    authorize_analytics_token,
-)
-from immuni_analytics.celery.authorization.tasks.verify_safety_net_attestation import (
+from immuni_analytics.celery.authorization_android.tasks.verify_safety_net_attestation import (
     verify_safety_net_attestation,
+)
+from immuni_analytics.celery.authorization_ios.tasks.authorize_analytics_token import (
+    authorize_analytics_token,
 )
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers

@@ -17,7 +17,7 @@ from typing import Any, Dict
 
 from aioredis.commands.string import StringCommandsMixin
 
-from immuni_analytics.celery.authorization.app import celery_app
+from immuni_analytics.celery.authorization_android.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net

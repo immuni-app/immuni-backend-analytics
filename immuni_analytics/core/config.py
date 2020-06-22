@@ -13,7 +13,6 @@
 
 from decouple import config
 
-from immuni_analytics.models.enums import CeleryAppName
 from immuni_common.core.config import ENV
 from immuni_common.helpers.config import load_certificate, validate_crontab
 from immuni_common.models.enums import Environment
@@ -40,11 +39,11 @@ APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
 CELERY_ALWAYS_EAGER: bool = config(
     "CELERY_ALWAYS_EAGER", cast=bool, default=ENV == Environment.TESTING
 )
-CELERY_APP_NAME: CeleryAppName = config(
-    "CELERY_APP_NAME", cast=CeleryAppName.from_env_var, default=CeleryAppName.AUTHORIZATION
+CELERY_BROKER_REDIS_URL_AUTHORIZATION_ANDROID: str = config(
+    "CELERY_BROKER_REDIS_URL_AUTHORIZATION_ANDROID", default="redis://localhost:6379/0"
 )
-CELERY_BROKER_REDIS_URL_AUTHORIZATION: str = config(
-    "CELERY_BROKER_REDIS_URL_AUTHORIZATION", default="redis://localhost:6379/0"
+CELERY_BROKER_REDIS_URL_AUTHORIZATION_IOS: str = config(
+    "CELERY_BROKER_REDIS_URL_AUTHORIZATION_IOS", default="redis://localhost:6379/0"
 )
 CELERY_BROKER_REDIS_URL_SCHEDULED: str = config(
     "CELERY_BROKER_REDIS_URL_SCHEDULED", default="redis://localhost:6379/0"
