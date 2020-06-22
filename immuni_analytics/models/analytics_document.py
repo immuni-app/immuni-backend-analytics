@@ -44,3 +44,5 @@ class AnalyticsDocument(Document):
             cls.__name__,
             extra={"n_deleted": count, "created_before": reference_date.isoformat()},
         )
+
+        return count

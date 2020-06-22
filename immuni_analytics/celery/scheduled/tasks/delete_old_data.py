@@ -27,8 +27,8 @@ def delete_old_data() -> None:
     """
     reference_date = datetime.utcnow() - timedelta(days=config.DATA_RETENTION_DAYS)
 
-    if deleted_exposure_payloads := ExposurePayload.delete_older_than(reference_date):
-        DELETED_EXPOSURE_PAYLOAD.inc(deleted_exposure_payloads)
+    deleted_exposure_payloads = ExposurePayload.delete_older_than(reference_date)
+    DELETED_EXPOSURE_PAYLOAD.inc(deleted_exposure_payloads)
 
-    if deleted_operational_infos := OperationalInfo.delete_older_than(reference_date):
-        DELETED_OPERATIONAL_INFO.inc(deleted_operational_infos)
+    deleted_operational_infos = OperationalInfo.delete_older_than(reference_date)
+    DELETED_OPERATIONAL_INFO.inc(deleted_operational_infos)
