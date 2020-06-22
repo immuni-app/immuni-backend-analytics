@@ -43,7 +43,7 @@ def verify_safety_net_attestation(
     :param operational_info: the device operational information.
     :param last_risky_exposure_on: the last risky exposure isoformat date.
     """
-    asyncio.run(
+    asyncio.run_until_complete(
         _verify_safety_net_attestation(
             safety_net_attestation,
             salt,

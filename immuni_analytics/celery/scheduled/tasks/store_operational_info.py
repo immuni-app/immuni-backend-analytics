@@ -28,7 +28,7 @@ def store_operational_info() -> None:  # pragma: no cover
     """
     Celery doesn't support async functions, so we wrap it around asyncio.run.
     """
-    asyncio.run(_store_operational_info())
+    asyncio.run_until_complete(_store_operational_info())
 
 
 async def _store_operational_info() -> None:
