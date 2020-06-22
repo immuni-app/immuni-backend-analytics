@@ -76,9 +76,8 @@ async def _store_exposure_payloads() -> None:
         ExposurePayload.objects.insert(exposure_data)
         STORED_EXPOSURE_PAYLOAD.inc(n_exposure_data)
 
-    if bad_format_data:
+    if n_bad_format_data := len(bad_format_data):
         managers.analytics_redis.rpush(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY, *bad_format_data)
-        n_bad_format_data = len(bad_format_data)
         _LOGGER.warning(
             "Found ingested data with bad format.", extra={"bad_format_data": n_bad_format_data}
         )
