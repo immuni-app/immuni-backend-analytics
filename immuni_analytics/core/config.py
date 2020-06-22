@@ -10,6 +10,7 @@
 #  GNU Affero General Public License for more details.
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.
+from typing import Optional
 
 from decouple import config
 
@@ -35,7 +36,6 @@ APPLE_DEVICE_CHECK_URL: str = config(
 )
 APPLE_KEY_ID: str = config("APPLE_KEY_ID", default="")
 APPLE_TEAM_ID: str = config("APPLE_TEAM_ID", default="")
-
 CELERY_ALWAYS_EAGER: bool = config(
     "CELERY_ALWAYS_EAGER", cast=bool, default=ENV == Environment.TESTING
 )
@@ -57,7 +57,6 @@ DELETE_OLD_DATA_PERIODICITY: str = config(
     cast=validate_crontab("DELETE_OLD_DATA_PERIODICITY"),
     default="0 0 * * *",
 )
-
 EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY: str = config(
     "EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY", default="errors_exposure_data"
 )
@@ -67,16 +66,14 @@ EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS: int = config(
 EXPOSURE_PAYLOAD_QUEUE_KEY: str = config(
     "EXPOSURE_PAYLOAD_QUEUE_KEY", default="ingested_exposure_data"
 )
-
+PROXY_URL: Optional[str] = config("PROXY_URL", default=None)
 OPERATIONAL_INFO_QUEUE_KEY: str = config("OPERATIONAL_INFO_QUEUE_KEY", default="operational_info")
 OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS: int = config(
     "OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS", cast=int, default=100
 )
-
 READ_TIME_SECONDS_MAX: int = config("READ_TIME_SECONDS_MAX", cast=int, default=3)
 READ_TIME_SECONDS_MIN: int = config("READ_TIME_SECONDS_MIN", cast=int, default=0)
 REQUESTS_TIMEOUT_SECONDS: int = config("REQUESTS_TIMEOUT_SECONDS", cast=int, default=5)
-
 SAFETY_NET_APK_DIGEST: str = config("SAFETY_NET_APK_DIGEST", default="")
 SAFETY_NET_ISSUER_HOSTNAME: str = config("SAFETY_NET_ISSUER_HOSTNAME", default="attest.android.com")
 SAFETY_NET_MAX_SKEW_MINUTES: int = config("SAFETY_NET_MAX_SKEW_MINUTES", cast=int, default=10)

@@ -77,7 +77,7 @@ async def post_with_retry(
         timeout=ClientTimeout(total=config.REQUESTS_TIMEOUT_SECONDS),
     )
 
-    async with session.post(**params) as response:
+    async with session.post(**params, proxy=config.PROXY_URL) as response:
         _LOGGER.info("Performed HTTP request.", extra=dict(request=params, response=response))
         if response.status >= 500:
             raise ServerUnavailableError()
