@@ -17,6 +17,7 @@ from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.models.exposure_data import ExposurePayload
 from immuni_analytics.models.operational_info import OperationalInfo
+from immuni_analytics.monitoring.celery import DELETED_EXPOSURE_PAYLOAD, DELETED_OPERATIONAL_INFO
 
 
 @celery_app.task()
@@ -25,5 +26,9 @@ def delete_old_data() -> None:
     Delete all ExposurePayload and OperationalInfo objects older than the configured retention days.
     """
     reference_date = datetime.utcnow() - timedelta(days=config.DATA_RETENTION_DAYS)
-    ExposurePayload.delete_older_than(reference_date)
-    OperationalInfo.delete_older_than(reference_date)
+
+    if deleted_exposure_payloads := ExposurePayload.delete_older_than(reference_date):
+        DELETED_EXPOSURE_PAYLOAD.inc(deleted_exposure_payloads)
+
+    if deleted_operational_infos := OperationalInfo.delete_older_than(reference_date):
+        DELETED_OPERATIONAL_INFO.inc(deleted_operational_infos)

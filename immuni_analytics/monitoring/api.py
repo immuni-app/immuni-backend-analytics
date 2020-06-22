@@ -11,7 +11,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from prometheus_client.metrics import Counter
+from prometheus_client.metrics import Counter, Gauge
 
 from immuni_common.monitoring.core import NAMESPACE, Subsystem
 
@@ -36,10 +36,11 @@ OPERATIONAL_INFO_ANDROID_REUSED_SALT = Counter(
     documentation="Number of Android operational info requests using an already used salt.",
 )
 
-OPERATIONAL_INFO_ENQUEUED = Counter(
+OPERATIONAL_INFO_ENQUEUED = Gauge(
     namespace=NAMESPACE,
     subsystem=Subsystem.API.value,
     name="operational_info_enqueued",
     labelnames=("platform",),
     documentation="Number of operational info requests enqueued.",
+    multiprocess_mode="liveall",
 )

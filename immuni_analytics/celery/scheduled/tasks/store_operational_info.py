@@ -14,11 +14,14 @@
 import asyncio
 import json
 import logging
+from collections import defaultdict
+from typing import Dict
 
 from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.models.operational_info import OperationalInfo
+from immuni_analytics.monitoring.api import OPERATIONAL_INFO_ENQUEUED
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,6 +53,12 @@ async def _store_operational_info() -> None:
 
     if operational_info_documents:
         OperationalInfo.objects.insert(operational_info_documents)
+        # NOTE: decrementing together to better show it has been done in the same tsaks.
+        inserted_per_platform: Dict[str, int] = defaultdict(lambda: 0)
+        for document in operational_info_documents:
+            inserted_per_platform[document.platform.value] += 1
+        for platform, inserted in inserted_per_platform.items():
+            OPERATIONAL_INFO_ENQUEUED.labels(platform).dec(inserted)
 
     queue_length = await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY)
     _LOGGER.info(

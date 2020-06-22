@@ -49,3 +49,31 @@ AUTHORIZE_ANALYTICS_TOKEN_BLACKLISTED = Counter(
     name="authorize_analytics_token_blacklisted",
     documentation="Number of analytics tokens unsuccessfully authorized.",
 )
+
+DELETED_EXPOSURE_PAYLOAD = Counter(
+    namespace=NAMESPACE,
+    subsystem=Subsystem.CELERY.value,
+    name="deleted_exposure_payload",
+    documentation="Number of deleted ExposurePayload documents.",
+)
+
+DELETED_OPERATIONAL_INFO = Counter(
+    namespace=NAMESPACE,
+    subsystem=Subsystem.CELERY.value,
+    name="deleted_operational_info",
+    documentation="Number of deleted OperationalInfo documents.",
+)
+
+STORED_EXPOSURE_PAYLOAD = Counter(
+    namespace=NAMESPACE,
+    subsystem=Subsystem.CELERY.value,
+    name="stored_exposure_payload",
+    documentation="Number of stored ExposurePayload documents.",
+)
+
+WRONG_EXPOSURE_PAYLOAD = Counter(
+    namespace=NAMESPACE,
+    subsystem=Subsystem.CELERY.value,
+    name="wrong_exposure_payload",
+    documentation="Number of malformed ExposurePayload documents coming from the ingestion MS.",
+)

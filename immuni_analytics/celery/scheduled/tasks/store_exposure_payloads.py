@@ -23,6 +23,7 @@ from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.models.exposure_data import ExposurePayload
+from immuni_analytics.monitoring.celery import STORED_EXPOSURE_PAYLOAD, WRONG_EXPOSURE_PAYLOAD
 from immuni_common.core.exceptions import ImmuniException
 
 _LOGGER = logging.getLogger(__name__)
@@ -71,18 +72,22 @@ async def _store_exposure_payloads() -> None:
 
         exposure_data.append(exposure_payload)
 
-    if exposure_data:
+    if n_exposure_data := len(exposure_data):
         ExposurePayload.objects.insert(exposure_data)
+        STORED_EXPOSURE_PAYLOAD.inc(n_exposure_data)
+
     if bad_format_data:
-        _LOGGER.warning(
-            "Found ingested data with bad format.", extra={"bad_format_data": len(bad_format_data)}
-        )
         managers.analytics_redis.rpush(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY, *bad_format_data)
+        n_bad_format_data = len(bad_format_data)
+        _LOGGER.warning(
+            "Found ingested data with bad format.", extra={"bad_format_data": n_bad_format_data}
+        )
+        WRONG_EXPOSURE_PAYLOAD.inc(n_bad_format_data)
 
     queue_length = await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_QUEUE_KEY)
     _LOGGER.info(
         "Store exposure payload periodic task completed.",
-        extra={"ingested_data": len(exposure_data), "ingestion_queue_length": queue_length},
+        extra={"ingested_data": n_exposure_data, "ingestion_queue_length": queue_length},
     )
 
 

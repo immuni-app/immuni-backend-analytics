@@ -29,11 +29,12 @@ class AnalyticsDocument(Document):
     meta: Dict[str, Any] = dict(allow_inheritance=True)
 
     @classmethod
-    def delete_older_than(cls, reference_date: datetime) -> None:
+    def delete_older_than(cls, reference_date: datetime) -> int:
         """
         Delete all objects older than the given datetime.
 
         :param reference_date: the datetime to check against.
+        :return: the number of deleted objects.
         """
         objects = cls.objects.filter(id__lte=ObjectId.from_datetime(reference_date))
         count = objects.delete()
