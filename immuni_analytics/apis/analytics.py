@@ -44,6 +44,8 @@ from immuni_analytics.models.swagger import (
     AuthorizationBody,
     GoogleOperationalInfo,
 )
+from immuni_analytics.monitoring.api import OPERATIONAL_INFO_ANDROID_REUSED_SALT
+from immuni_analytics.monitoring.helpers import monitor_operational_info
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import handle_dummy_requests, json_response, validate
 from immuni_common.helpers.swagger import doc_exception
@@ -93,11 +95,12 @@ bp = Blueprint("analytics", url_prefix="analytics")
     last_risky_exposure_on=IsoDate(),
     province=Province(),
 )
+@monitor_operational_info
 @handle_dummy_requests(
     [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
 )
 @inject_operational_info
-async def post_operational_info(
+async def post_apple_operational_info(
     request: Request, operational_info: OperationalInfoDocument, **kwargs: Any
 ) -> HTTPResponse:
     """
@@ -149,6 +152,7 @@ async def post_operational_info(
         required=True, validate=Length(max=config.SIGNED_ATTESTATION_MAX_LENGTH)
     ),
 )
+@monitor_operational_info
 @handle_dummy_requests(
     [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
 )
@@ -177,6 +181,7 @@ async def post_android_operational_info(
             "Found previously used salt.",
             extra=dict(signed_attestation=signed_attestation, salt=salt),
         )
+        OPERATIONAL_INFO_ANDROID_REUSED_SALT.labels(False).inc()
         return json_response(body=None, status=HTTPStatus.NO_CONTENT)
 
     verify_safety_net_attestation.delay(

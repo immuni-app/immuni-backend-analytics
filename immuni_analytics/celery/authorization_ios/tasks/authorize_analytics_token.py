@@ -24,6 +24,13 @@ from immuni_analytics.helpers.device_check import (
     set_device_check_bits,
 )
 from immuni_analytics.helpers.redis import get_all_authorizations_for_upload
+from immuni_analytics.monitoring.celery import (
+    AUTHORIZE_ANALYTICS_TOKEN_AUTHORIZED,
+    AUTHORIZE_ANALYTICS_TOKEN_BLACKLISTED,
+    AUTHORIZE_ANALYTICS_TOKEN_FIRST_STEP_BEGIN,
+    AUTHORIZE_ANALYTICS_TOKEN_SECOND_STEP_BEGIN,
+    AUTHORIZE_ANALYTICS_TOKEN_THIRD_STEP_BEGIN,
+)
 from immuni_common.core.exceptions import ImmuniException
 from immuni_common.models.enums import Environment
 
@@ -92,6 +99,7 @@ async def _first_step(device_token: str) -> None:
       BlacklistDeviceException: if an anomaly is detected
       DiscardAnalyticsTokenException: if the token has already been used in the current month.
     """
+    AUTHORIZE_ANALYTICS_TOKEN_FIRST_STEP_BEGIN.inc()
     device_check_data = await fetch_device_check_bits(device_token)
 
     # Do not perform this check if we are not in release environment otherwise we can use a
@@ -129,6 +137,7 @@ async def _second_step(device_token: str) -> None:
 
     :raises: BlacklistDeviceException if an anomaly is detected.
     """
+    AUTHORIZE_ANALYTICS_TOKEN_SECOND_STEP_BEGIN.inc()
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_default_configuration:
         _LOGGER.warning(
@@ -153,6 +162,7 @@ async def _third_step(device_token: str) -> None:
 
     :raises: BlacklistDeviceException if an anomaly is detected.
     """
+    AUTHORIZE_ANALYTICS_TOKEN_THIRD_STEP_BEGIN.inc()
     device_check_data = await fetch_device_check_bits(device_token)
     if not device_check_data.is_authorized:
         _LOGGER.warning(
@@ -180,6 +190,7 @@ async def _blacklist_device(device_token: str) -> None:
     #  release environment.
     if config.ENV == Environment.RELEASE:
         await set_device_check_bits(device_token, bit0=True, bit1=True)
+    AUTHORIZE_ANALYTICS_TOKEN_BLACKLISTED.inc()
 
 
 async def _add_analytics_token_to_redis(analytics_token: str) -> None:
@@ -191,3 +202,4 @@ async def _add_analytics_token_to_redis(analytics_token: str) -> None:
     """
     await managers.analytics_redis.sadd(analytics_token, *get_all_authorizations_for_upload())
     _LOGGER.info("New authorized analytics token.", extra=dict(analytics_token=analytics_token))
+    AUTHORIZE_ANALYTICS_TOKEN_AUTHORIZED.inc()

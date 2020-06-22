@@ -24,6 +24,7 @@ from immuni_analytics.helpers import safety_net
 from immuni_analytics.helpers.redis import enqueue_operational_info
 from immuni_analytics.helpers.safety_net import MalformedJwsToken, SafetyNetVerificationError
 from immuni_analytics.models.operational_info import OperationalInfo
+from immuni_analytics.monitoring.api import OPERATIONAL_INFO_ANDROID_REUSED_SALT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -87,3 +88,4 @@ async def _verify_safety_net_attestation(
             "Found previously used salt.",
             extra=dict(safety_net_attestation=safety_net_attestation, salt=salt),
         )
+        OPERATIONAL_INFO_ANDROID_REUSED_SALT.labels(True).inc()

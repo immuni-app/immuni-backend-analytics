@@ -19,6 +19,7 @@ from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.date_utils import current_month, next_month
 from immuni_analytics.models.operational_info import OperationalInfo
+from immuni_analytics.monitoring.api import OPERATIONAL_INFO_ENQUEUED
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,3 +84,4 @@ async def enqueue_operational_info(operational_info: OperationalInfo) -> None:
         config.OPERATIONAL_INFO_QUEUE_KEY, json.dumps(operational_info.to_dict())
     )
     _LOGGER.info("Successfully enqueued operational info.")
+    OPERATIONAL_INFO_ENQUEUED.labels(operational_info.platform.value).inc()
