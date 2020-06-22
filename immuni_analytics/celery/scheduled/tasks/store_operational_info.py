@@ -14,7 +14,7 @@
 import asyncio
 import json
 import logging
-from collections import defaultdict
+from collections import Counter
 from typing import Dict
 
 from immuni_analytics.celery.scheduled.app import celery_app
@@ -53,12 +53,12 @@ async def _store_operational_info() -> None:
 
     if operational_info_documents:
         OperationalInfo.objects.insert(operational_info_documents)
-        # NOTE: decrementing together to better show it has been done in the same tsaks.
-        inserted_per_platform: Dict[str, int] = defaultdict(lambda: 0)
-        for document in operational_info_documents:
-            inserted_per_platform[document.platform.value] += 1
-        for platform, inserted in inserted_per_platform.items():
-            OPERATIONAL_INFO_ENQUEUED.labels(platform).dec(inserted)
+        count_per_platform: Dict[str, int] = Counter(
+            document.platform.value for document in operational_info_documents
+        )
+        for platform, count in count_per_platform.items():
+            # NOTE: decrementing together to better show it has been done in the same tasks.
+            OPERATIONAL_INFO_ENQUEUED.labels(platform).dec(count)
 
     queue_length = await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY)
     _LOGGER.info(
