@@ -97,7 +97,7 @@ bp = Blueprint("analytics", url_prefix="analytics")
     [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
 )
 @inject_operational_info
-async def post_operational_info(
+async def post_apple_operational_info(
     request: Request, operational_info: OperationalInfoDocument, **kwargs: Any
 ) -> HTTPResponse:
     """
