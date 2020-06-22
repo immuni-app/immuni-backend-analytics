@@ -25,16 +25,13 @@ from immuni_analytics.helpers.safety_net import (
     MalformedJwsToken,
     SafetyNetVerificationError,
     _get_certificates,
-    _get_jws_header,
-    _get_jws_part,
-    _get_jws_payload,
     _load_leaf_certificate,
     _parse_jws_part,
     _validate_certificates,
     _verify_signature,
     get_redis_key,
     verify_attestation,
-)
+    _decode_jws)
 from immuni_analytics.models.operational_info import OperationalInfo
 from immuni_common.models.enums import Platform
 from tests.fixtures.safety_net import POST_TIMESTAMP, TEST_APK_DIGEST
@@ -51,20 +48,6 @@ def test_get_redis_key() -> None:
     assert "~safetynet-used-salt:my-salt" == get_redis_key("my-salt")
 
 
-def test_get_jws_part() -> None:
-    # A jws token is a string composed of three sub-strings divided by dots.
-    fake_jws = "first.second.third"
-    assert _get_jws_part(fake_jws, 0) == "first"
-    assert _get_jws_part(fake_jws, 1) == "second"
-    assert _get_jws_part(fake_jws, 2) == "third"
-
-
-@mark.parametrize("wrong_jws", ["first.second", "first.second.third.fourth.fifth", ""])
-def test_get_jws_part_raises_if_wrong_parts(wrong_jws: str) -> None:
-    with raises(MalformedJwsToken):
-        _get_jws_part(wrong_jws, 1)
-
-
 def test_parse_jws_part() -> None:
     test_dict = {"test": "val", "test1": 1, "test2": {"a": 1, "ba": True}}
     base64encoded = base64.b64encode(json.dumps(test_dict).encode()).decode()
@@ -72,18 +55,6 @@ def test_parse_jws_part() -> None:
     base64encoded = base64encoded.rstrip("=")
 
     assert _parse_jws_part(base64encoded) == test_dict
-
-
-def test_get_jws_header() -> None:
-    assert _get_jws_header(_JWS_EXAMPLE) == {"typ": "JWT", "alg": "HS256"}
-
-
-def test_get_jws_payload() -> None:
-    assert _get_jws_payload(_JWS_EXAMPLE) == {
-        "iss": "joe",
-        "exp": 1300819380,
-        "http://example.com/is_root": True,
-    }
 
 
 @mark.parametrize(
@@ -96,8 +67,8 @@ def test_get_jws_payload() -> None:
 )
 @patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
 def test_get_jws_header_raises(warning_logger: MagicMock, wrong_jws: str) -> None:
-    with raises(SafetyNetVerificationError):
-        _get_jws_header(wrong_jws)
+    with raises(MalformedJwsToken):
+        _decode_jws(wrong_jws)
 
     warning_logger.assert_called_once()
 
@@ -112,8 +83,8 @@ def test_get_jws_header_raises(warning_logger: MagicMock, wrong_jws: str) -> Non
 )
 @patch("immuni_analytics.helpers.safety_net._LOGGER.warning")
 def test_get_jws_payload_raises(warning_logger: MagicMock, wrong_jws: str) -> None:
-    with raises(SafetyNetVerificationError):
-        _get_jws_payload(wrong_jws)
+    with raises(MalformedJwsToken):
+        _decode_jws(wrong_jws)
 
     warning_logger.assert_called_once()
 
@@ -189,7 +160,7 @@ def test_verify_raises_if_nonce_changes(
 def test_get_certificate_raises_if_missing_key(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
-    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    header = _decode_jws(safety_net_post_body_with_exposure["signed_attestation"]).header
     header.pop("x5c")
 
     with raises(SafetyNetVerificationError):
@@ -201,7 +172,7 @@ def test_get_certificate_raises_if_missing_key(
 def test_get_certificate_raises_if_wrong_encoding(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
-    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    header = _decode_jws(safety_net_post_body_with_exposure["signed_attestation"]).header
     header["x5c"][0] = "non_base64_string"
     with raises(SafetyNetVerificationError):
         _get_certificates(header)
@@ -212,7 +183,7 @@ def test_get_certificate_raises_if_wrong_encoding(
 def test_validate_certificate_raises_if_wrong_path(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
-    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    header = _decode_jws(safety_net_post_body_with_exposure["signed_attestation"]).header
     certificates = _get_certificates(header)
     certificates.reverse()
 
@@ -225,7 +196,7 @@ def test_validate_certificate_raises_if_wrong_path(
 def test_validate_certificate_raises_if_wrong_issuer(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
-    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    header = _decode_jws(safety_net_post_body_with_exposure["signed_attestation"]).header
     certificates = _get_certificates(header)
     with patch(
         "immuni_analytics.helpers.safety_net.config.SAFETY_NET_ISSUER_HOSTNAME", "wrong.issuer.com"
@@ -239,7 +210,7 @@ def test_validate_certificate_raises_if_wrong_issuer(
 def test_raises_if_invalid_leaf(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
-    header = _get_jws_header(safety_net_post_body_with_exposure["signed_attestation"])
+    header = _decode_jws(safety_net_post_body_with_exposure["signed_attestation"]).header
     certificates = _get_certificates(header)
     certificates[0] = certificates[0][:20] + certificates[0][22:]
     with raises(SafetyNetVerificationError):
@@ -252,7 +223,7 @@ def test_verify_signature_raises_if_wrong_leaf(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
     attestation = safety_net_post_body_with_exposure["signed_attestation"]
-    header = _get_jws_header(attestation)
+    header = _decode_jws(attestation).header
     certificates = _get_certificates(header)
     certificates.reverse()
     with raises(SafetyNetVerificationError):
@@ -265,7 +236,7 @@ def test_verify_signature_raises_if_wrong_signature(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
     attestation = safety_net_post_body_with_exposure["signed_attestation"]
-    header = _get_jws_header(attestation)
+    header = _decode_jws(attestation).header
     certificates = _get_certificates(header)
 
     wrong_attestation_signature = ".".join(
@@ -281,7 +252,7 @@ def test_verify_signature_raises_if_wrong_public_key_format(
     warning_logger: MagicMock, safety_net_post_body_with_exposure: Dict[str, Any]
 ) -> None:
     attestation = safety_net_post_body_with_exposure["signed_attestation"]
-    header = _get_jws_header(attestation)
+    header = _decode_jws(attestation).header
     certificates = _get_certificates(header)
 
     with patch(

@@ -18,7 +18,7 @@ import logging
 from datetime import datetime, timedelta
 from hashlib import sha256
 from json import JSONDecodeError
-from typing import Any, Dict, List
+from typing import Any, Dict, List, NamedTuple
 
 import certvalidator
 import jwt
@@ -51,6 +51,16 @@ class MalformedJwsToken(ImmuniException):
         super().__init__(f"Malformed JWS token: {jws_token}.")
 
 
+class DecodedJWS(NamedTuple):
+    """
+    Named tuple to access the decoded jws token.
+    """
+
+    header: Dict[str, Any]
+    payload: Dict[str, Any]
+    signature: str
+
+
 def get_redis_key(salt: str) -> str:
     """
     Retrieve the redis key for a given salt.
@@ -61,19 +71,36 @@ def get_redis_key(salt: str) -> str:
     return f"~safetynet-used-salt:{salt}"
 
 
-def _get_jws_part(jws_token: str, index: int) -> str:
+def _decode_jws(jws_token: str) -> DecodedJWS:
     """
-    Split the jws token in its different parts and return the specified one.
+    Split the jws token in its different parts and decode them.
 
     :param jws_token: the jws_token to split.
-    :param index: the jws_token part to retrieves.
     :return: the jws_token part specified by index.
-    :raises: MalformedJwsToken, IndexError.
+    :raises: MalformedJwsToken if the token cannot be decoded.
     """
 
     if len(parts := jws_token.split(".")) == 3:
-        return parts[index]
+        try:
+            return DecodedJWS(
+                header=_parse_jws_part(parts[0]),
+                payload=_parse_jws_part(parts[1]),
+                signature=parts[2],
+            )
+        except (
+            binascii.Error,
+            JSONDecodeError,
+            UnicodeDecodeError,
+        ) as exc:
+            _LOGGER.warning(
+                "Could not decode jws token.", extra=dict(error=str(exc), jws_token=jws_token),
+            )
+            raise MalformedJwsToken(jws_token)
 
+    _LOGGER.warning(
+        "Could not decode jws token. Unexpected number of parts.",
+        extra=dict(jws_token=jws_token, jws_parts=parts),
+    )
     raise MalformedJwsToken(jws_token)
 
 
@@ -83,55 +110,14 @@ def _parse_jws_part(jws_part: str) -> Dict[str, Any]:
 
     :param jws_part: the base string to b64decode.
     :return: the decoded string.
-    :raises: UnicodeDecodeError if the decode fails.
+    :raises: binascii.Error if the base64decode fails.
+     JSONDecodeError if the json decode fails.
+     UnicodeDecodeError if the decode from binary fails.
     """
     padding = "=" * (4 - (len(jws_part) % 4))
     padded_jws_part = f"{jws_part}{padding}"
 
     return json.loads(base64.b64decode(padded_jws_part).decode())
-
-
-def _get_jws_header(jws_token: str) -> Dict[str, Any]:
-    """
-    Retrieve the header of a jws token.
-
-    :param jws_token: the jws token to get the header from.
-    :return: the jws token header.
-    :raises: SafetyNetVerificationError if the header could not be retrieved.
-    """
-    try:
-        header = _parse_jws_part(_get_jws_part(jws_token, 0))
-    except (
-        binascii.Error,
-        IndexError,
-        JSONDecodeError,
-        MalformedJwsToken,
-        UnicodeDecodeError,
-    ) as exc:
-        _LOGGER.warning(
-            "Could not retrieve header from jws token.",
-            extra=dict(error=str(exc), jws_token=jws_token),
-        )
-        raise SafetyNetVerificationError()
-    return header
-
-
-def _get_jws_payload(jws_token: str) -> Dict[str, Any]:
-    """
-    Retrieve the payload of a jws token.
-
-    :param jws_token: the jws token to get the payload from.
-    :return: the jws token payload.
-    :raises: SafetyNetVerificationError if the payload could not be retrieved.
-    """
-    try:
-        return _parse_jws_part(_get_jws_part(jws_token, 1))
-    except (binascii.Error, IndexError, JSONDecodeError, MalformedJwsToken) as exc:
-        _LOGGER.warning(
-            "Could not retrieve payload from jws token.",
-            extra=dict(error=str(exc), jws_token=jws_token),
-        )
-        raise SafetyNetVerificationError()
 
 
 def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
@@ -312,9 +298,8 @@ def verify_attestation(
     :param last_risky_exposure_on: the last risky exposure isoformat date.
     :raises: SafetyNetVerificationError if any of the retrieval or validation steps fail.
     """
-    header = _get_jws_header(safety_net_attestation)
-    certificates = _get_certificates(header)
+    decoded_jws = _decode_jws(safety_net_attestation)
+    certificates = _get_certificates(decoded_jws.header)
     _validate_certificates(certificates)
     _verify_signature(safety_net_attestation, certificates)
-    payload = _get_jws_payload(safety_net_attestation)
-    _validate_payload(payload, operational_info, salt, last_risky_exposure_on)
+    _validate_payload(decoded_jws.payload, operational_info, salt, last_risky_exposure_on)

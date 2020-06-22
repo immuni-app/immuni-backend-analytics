@@ -22,7 +22,7 @@ from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers import safety_net
 from immuni_analytics.helpers.redis import enqueue_operational_info
-from immuni_analytics.helpers.safety_net import SafetyNetVerificationError
+from immuni_analytics.helpers.safety_net import MalformedJwsToken, SafetyNetVerificationError
 from immuni_analytics.models.operational_info import OperationalInfo
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ async def _verify_safety_net_attestation(
         safety_net.verify_attestation(
             safety_net_attestation, salt, operational_info, last_risky_exposure_on
         )
-    except SafetyNetVerificationError:
+    except (SafetyNetVerificationError, MalformedJwsToken):
         return
 
     if await managers.analytics_redis.set(
