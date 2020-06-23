@@ -17,7 +17,7 @@ from http import HTTPStatus
 from typing import Any
 
 from marshmallow import fields
-from marshmallow.validate import Length, Regexp
+from marshmallow.validate import Length
 from sanic import Blueprint
 from sanic.request import Request
 from sanic.response import HTTPResponse
@@ -38,6 +38,7 @@ from immuni_analytics.helpers.redis import (
     get_upload_authorization_member_for_current_month,
     is_upload_authorized_for_token,
 )
+from immuni_analytics.models.marshmallow import AnalyticsToken, validate_analytics_token_from_bearer
 from immuni_analytics.models.operational_info import OperationalInfo as OperationalInfoDocument
 from immuni_analytics.models.swagger import (
     AppleOperationalInfo,
@@ -114,8 +115,9 @@ async def post_apple_operational_info(
     :param operational_info: the operational information to save.
     :return: 204 in any case.
     """
+    analytics_token = validate_analytics_token_from_bearer(request.token)
     if await managers.analytics_redis.srem(
-        request.token,
+        analytics_token,
         get_upload_authorization_member_for_current_month(operational_info.exposure_notification),
     ):
         await enqueue_operational_info(operational_info)
@@ -219,9 +221,7 @@ async def post_android_operational_info(
 )
 @validate(
     location=Location.JSON,
-    analytics_token=fields.String(
-        required=True, validate=Regexp(rf"^[a-f0-9]{{{config.ANALYTICS_TOKEN_SIZE}}}$")
-    ),
+    analytics_token=AnalyticsToken(),
     device_token=Base64String(required=True, max_encoded_length=config.DEVICE_TOKEN_MAX_LENGTH),
 )
 async def authorize_token(
