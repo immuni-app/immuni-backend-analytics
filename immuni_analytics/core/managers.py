@@ -1,15 +1,15 @@
-#    Copyright (C) 2020 Presidenza del Consiglio dei Ministri.
-#    Please refer to the AUTHORS file for more information.
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-#    GNU Affero General Public License for more details.
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program. If not, see <https://www.gnu.org/licenses/>.
+#  Copyright (C) 2020 Presidenza del Consiglio dei Ministri.
+#  Please refer to the AUTHORS file for more information.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as
+#  published by the Free Software Foundation, either version 3 of the
+#  License, or (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU Affero General Public License for more details.
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
 
@@ -48,12 +48,18 @@ class Managers(BaseManagers):
             raise RuntimeError("Attempting to use Analytics redis before initialization")
         return self._analytics_redis
 
-    async def initialize(self) -> None:
+    async def initialize(  # pylint: disable=arguments-differ
+        self, initialize_mongo: bool = False
+    ) -> None:
         """
         Initialize managers on demand.
+
+        :param initialize_mongo: whether to initialize the MongoDB manager.
         """
         await super().initialize()
-        self._analytics_mongo = connect(host=config.ANALYTICS_MONGO_URL)
+        if initialize_mongo:
+            self._analytics_mongo = connect(host=config.ANALYTICS_MONGO_URL)
+
         self._analytics_redis = await aioredis.create_redis_pool(
             address=config.ANALYTICS_BROKER_REDIS_URL, encoding="utf-8",
         )

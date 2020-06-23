@@ -131,7 +131,6 @@ jobs:
           deps_cache_version: "v2"
       - pytest:
           coverage_path: ./immuni_analytics
-          min_coverage: 98
 
   check:
     docker:
@@ -169,15 +168,37 @@ jobs:
           name: "[misc] Let the Celery app start"
           command: sleep 3
       - run:
-          name: "[celery] Worker health check"
+          name: "[celery] Worker authorization iOS health check"
           command: |
-            docker exec docker_worker_1 \
-                celery inspect stats --app=immuni_analytics.celery.celery_app
+            docker exec docker_worker_authorization_ios_1 \
+                celery inspect stats --app=immuni_analytics.celery.authorization_ios.app.celery_app
+      - run:
+          name: "[celery] Worker authorization Android health check"
+          command: |
+            docker exec docker_worker_authorization_android_1 \
+                celery inspect stats --app=immuni_analytics.celery.authorization_android.app.celery_app
+      - run:
+          name: "[celery] Worker scheduled health check"
+          command: |
+            docker exec docker_worker_scheduled_1 \
+                celery inspect stats --app=immuni_analytics.celery.scheduled.app.celery_app
       - run:
           name: "[celery] Beat health check"
           command: |
             docker exec docker_beat_1 \
                 ps -e | grep celery
+      - run:
+          name: "[sanic] API health check"
+          command: |
+            docker run \
+                --network container:docker_api_1 \
+                appropriate/curl \
+                -4 \
+                --verbose \
+                --retry 10 \
+                --retry-delay 1 \
+                --retry-connrefused \
+                http://localhost:5000
 
 workflows:
   code-quality:
