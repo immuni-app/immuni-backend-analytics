@@ -28,6 +28,7 @@ _ENDPOINT_PLATFORM_TO_PLATFORM = {"apple": Platform.IOS, "google": Platform.ANDR
 def monitor_operational_info(f: Callable[..., Coroutine[Any, Any, HTTPResponse]]) -> Callable:
     """
     Decorator to monitor operational info requests metrics.
+
     :param f: the endpoint function to decorate.
     :return: the decorated function.
     """
