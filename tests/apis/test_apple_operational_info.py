@@ -48,7 +48,7 @@ def headers() -> Dict[str, str]:
         f"Bearer {ANALYTICS_TOKEN}longer",
         f"Bearer {ANALYTICS_TOKEN[:-1]}k",  # non-hexadecimal
         f"Bearer {ANALYTICS_TOKEN[:-1]}A",  # uppercase letter
-    )
+    ),
 )
 async def test_apple_operational_info_malformed_analytics_token(
     client: TestClient,
