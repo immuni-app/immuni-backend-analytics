@@ -24,6 +24,9 @@ ANALYTICS_BROKER_REDIS_URL: str = config(
 ANALYTICS_MONGO_URL = config(
     "ANALYTICS_MONGO_URL", default="mongodb://localhost:27017/immuni-analytics-dev"
 )
+ANALYTICS_TOKEN_EXPIRATION_DAYS: int = config(
+    "ANALYTICS_TOKEN_EXPIRATION_MINUTES", cast=int, default=62
+)
 ANALYTICS_TOKEN_SIZE: int = config("ANALYTICS_TOKEN_SIZE", cast=int, default=128)
 APPLE_CERTIFICATE_KEY: str = config(
     "APPLE_CERTIFICATE_KEY", cast=load_certificate("APPLE_CERTIFICATE_KEY"), default=""
