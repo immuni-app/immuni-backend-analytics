@@ -193,6 +193,7 @@ jobs:
             docker run \
                 --network container:docker_api_1 \
                 appropriate/curl \
+                -4 \
                 --verbose \
                 --retry 10 \
                 --retry-delay 1 \
