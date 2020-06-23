@@ -34,7 +34,7 @@ def worker_process_init_listener(**kwargs: Any) -> None:  # pragma: no cover
 
 
 @worker_process_shutdown.connect
-def worker_process_shutdown_listener(**kwargs: Any) -> None:  # pragma: no cove˚r
+def worker_process_shutdown_listener(**kwargs: Any) -> None:  # pragma: no cover
     """
     Listener on worker shutdown to properly cleanup the project's managers.
 
