@@ -43,11 +43,16 @@ def monitor_operational_info(f: Callable[..., Coroutine[Any, Any, HTTPResponse]]
     async def _wrapper(*args: Any, is_dummy: bool, **kwargs: Any) -> HTTPResponse:
         request = args[0]
         platform = _ENDPOINT_PLATFORM_TO_PLATFORM[request.uri_template.split("/")[3]]
+        province = kwargs["province"]
         try:
             response = await f(*args, **kwargs)
-            OPERATIONAL_INFO_REQUESTS.labels(is_dummy, platform, response.status).inc()
+            OPERATIONAL_INFO_REQUESTS.labels(
+                is_dummy, platform.value, province, response.status
+            ).inc()
         except ApiException as error:
-            OPERATIONAL_INFO_REQUESTS.labels(is_dummy, platform, error.status_code.value).inc()
+            OPERATIONAL_INFO_REQUESTS.labels(
+                is_dummy, platform.value, province, error.status_code.value
+            ).inc()
             raise
         return response
 
