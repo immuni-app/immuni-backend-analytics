@@ -26,7 +26,7 @@ class AnalyticsDocument(Document):
     Document base class providing a method to comply with the data retention policy.
     """
 
-    meta: Dict[str, Any] = dict(allow_inheritance=True)
+    meta: Dict[str, Any] = dict(abstract=True)
 
     @classmethod
     def delete_older_than(cls, reference_date: datetime) -> int:
