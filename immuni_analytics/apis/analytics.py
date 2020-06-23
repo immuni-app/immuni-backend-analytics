@@ -98,7 +98,7 @@ bp = Blueprint("analytics", url_prefix="analytics")
 @monitor_operational_info
 # Dummy requests are currently being filtered at the reverse proxy level, emulating the same
 # behavior implemented below and introducing a response delay.
-# Tis may be re-evaluated in the future.
+# This may be re-evaluated in the future.
 @handle_dummy_requests(
     [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
 )
@@ -158,7 +158,7 @@ async def post_apple_operational_info(
 @monitor_operational_info
 # Dummy requests are currently being filtered at the reverse proxy level, emulating the same
 # behavior implemented below and introducing a response delay.
-# Tis may be re-evaluated in the future.
+# This may be re-evaluated in the future.
 @handle_dummy_requests(
     [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
 )
