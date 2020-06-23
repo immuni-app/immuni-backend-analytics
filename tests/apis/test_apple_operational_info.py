@@ -24,13 +24,9 @@ from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.redis import get_upload_authorization_member_for_current_month
 from immuni_analytics.models.operational_info import OperationalInfo
+from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.models.enums import Platform
-from tests.fixtures.operational_info import OPERATIONAL_INFO
-
-ANALYTICS_TOKEN = (
-    "0a17753fecc38a5e259319e4524b55df439a98c1ff6326df7247263aa1192701cbe8799457cb1ac173590"
-    "eecb11bfe62a34cc0798f95d8842124814c24f53ff"
-)
+from tests.fixtures.operational_info import ANALYTICS_TOKEN, OPERATIONAL_INFO
 
 
 @fixture
@@ -40,6 +36,32 @@ def headers() -> Dict[str, str]:
         "Immuni-Dummy-Data": "0",
         "Content-Type": "application/json; charset=utf-8",
     }
+
+
+@mark.parametrize(
+    "analytics_token",
+    (
+        "",
+        "Bearer",
+        f"Another {ANALYTICS_TOKEN}",
+        "Bearer shorter",
+        f"Bearer {ANALYTICS_TOKEN}longer",
+        f"Bearer {ANALYTICS_TOKEN[:-1]}k",  # non-hexadecimal
+        f"Bearer {ANALYTICS_TOKEN[:-1]}A",  # uppercase letter
+    ),
+)
+async def test_apple_operational_info_malformed_analytics_token(
+    client: TestClient,
+    headers: Dict[str, str],
+    operational_info: Dict[str, Any],
+    analytics_token: str,
+) -> None:
+    headers["Authorization"] = analytics_token
+    response = await client.post(
+        "/v1/analytics/apple/operational-info", json=operational_info, headers=headers,
+    )
+    assert response.status == SchemaValidationException.status_code
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 0
 
 
 @patch("immuni_analytics.helpers.redis._LOGGER.info")
@@ -80,7 +102,7 @@ async def test_apple_operational_info_with_exposure(
     redis_logger_info.assert_called_once_with("Successfully enqueued operational info.")
 
 
-async def test_apple_operational_info_missing_token(
+async def test_apple_operational_info_missing_redis_token(
     client: TestClient, headers: Dict[str, str], operational_info: Dict[str, Any]
 ) -> None:
     response = await client.post(

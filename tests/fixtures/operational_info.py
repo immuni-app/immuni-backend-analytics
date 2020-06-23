@@ -29,3 +29,9 @@ OPERATIONAL_INFO = {
 @fixture
 def operational_info() -> Dict[str, Any]:
     return deepcopy(OPERATIONAL_INFO)
+
+
+ANALYTICS_TOKEN = (
+    "746e35ce91c6e26db93981d57b38fd13b4d2c58c04d2775ceca3a0b43e12965ba532956cb3e72375782d3"
+    "f93be3e8c09b3727d79287a92945633148e867eb762"
+)
