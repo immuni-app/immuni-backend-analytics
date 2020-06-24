@@ -51,7 +51,7 @@ from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import handle_dummy_requests, json_response, validate
 from immuni_common.helpers.swagger import doc_exception
 from immuni_common.helpers.utils import WeightedPayload
-from immuni_common.models.enums import Location
+from immuni_common.models.enums import Location, Platform
 from immuni_common.models.marshmallow.fields import (
     Base64String,
     IntegerBoolField,
@@ -103,7 +103,7 @@ bp = Blueprint("analytics", url_prefix="analytics")
 @handle_dummy_requests(
     [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
 )
-@inject_operational_info
+@inject_operational_info(platform=Platform.IOS)
 async def post_apple_operational_info(
     request: Request, operational_info: OperationalInfoDocument, **kwargs: Any
 ) -> HTTPResponse:
@@ -164,7 +164,7 @@ async def post_apple_operational_info(
 @handle_dummy_requests(
     [WeightedPayload(weight=1, payload=json_response(body=None, status=HTTPStatus.NO_CONTENT))]
 )
-@inject_operational_info
+@inject_operational_info(platform=Platform.ANDROID)
 async def post_android_operational_info(
     request: Request,
     last_risky_exposure_on: date,
