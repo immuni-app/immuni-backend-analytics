@@ -25,6 +25,9 @@ from immuni_analytics.monitoring.helpers import (
     monitor_operational_info,
 )
 from immuni_common.core.exceptions import ApiException
+from immuni_common.helpers.sanic import validate
+from immuni_common.models.enums import Location
+from immuni_common.models.marshmallow.fields import Province
 
 
 @mark.parametrize(
@@ -44,17 +47,19 @@ async def test_monitor_operational_info(
     should_raise: bool,
 ) -> None:
     route = f"/first/second/{endpoint_platform}/{str(should_raise).lower()}"
+    expected_status = ApiException.status_code.value if should_raise else HTTPStatus.OK.value
 
-    @sanic.route(route)
+    @sanic.route(route, methods=["POST"])
+    @validate(location=Location.JSON, province=Province())
     @monitor_operational_info
-    async def dummy(request: Request) -> HTTPResponse:
+    async def dummy(request: Request, province: str) -> HTTPResponse:
         if should_raise:
             raise ApiException()
         return HTTPResponse(status=HTTPStatus.OK)
 
-    await client.get(route, headers={"Immuni-Dummy-Data": "1"})
+    response = await client.post(route, json={"province": "SU"}, headers={"Immuni-Dummy-Data": "1"})
+
+    assert response.status == expected_status
     metrics_increment_method.assert_called_once_with(
-        True,
-        _ENDPOINT_PLATFORM_TO_PLATFORM[endpoint_platform],
-        ApiException.status_code.value if should_raise else HTTPStatus.OK.value,
+        True, _ENDPOINT_PLATFORM_TO_PLATFORM[endpoint_platform].value, "SU", expected_status,
     )

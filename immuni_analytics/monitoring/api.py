@@ -24,7 +24,7 @@ OPERATIONAL_INFO_REQUESTS = Counter(
     namespace=NAMESPACE,
     subsystem=Subsystem.API.value,
     name="operational_info_requests",
-    labelnames=("dummy", "platform", "http_status"),
+    labelnames=("dummy", "platform", "province", "http_status"),
     documentation="Number of operational info requests the server responded to.",
 )
 
