@@ -20,35 +20,43 @@ from immuni_common.models.enums import Platform
 
 
 def inject_operational_info(
-    f: Callable[..., Coroutine[Any, Any, HTTPResponse]]
-) -> Callable[..., Coroutine[Any, Any, HTTPResponse]]:
+    platform: Platform,
+) -> Callable[
+    [Callable[..., Coroutine[Any, Any, HTTPResponse]]],
+    Callable[..., Coroutine[Any, Any, HTTPResponse]],
+]:
     """
     Validates all of the operational info parameters and injects them as a single model to the
     decorated function.
 
-    :param f: the function to inject operational info to.
+    :param platform: the platform the operation info is associated with.
     :return: the decorated function.
     """
 
-    async def _wrapper(*args: Any, **kwargs: Any) -> HTTPResponse:
-        """
-        Validate and prepare the OperationalInfo document to be used by the decorated function.
+    def _wrapper(
+        f: Callable[..., Coroutine[Any, Any, HTTPResponse]]
+    ) -> Callable[..., Coroutine[Any, Any, HTTPResponse]]:
+        async def _wrapped_function(*args: Any, **kwargs: Any) -> HTTPResponse:
+            """
+            Validate and prepare the OperationalInfo document to be used by the decorated function.
 
-        :param args: the positional arguments.
-        :param kwargs: the keyword arguments.
-        :return: the function HTTPResponse return value.
-        """
-        kwargs["operational_info"] = OperationalInfo(
-            platform=Platform.IOS,
-            province=kwargs.get("province"),
-            exposure_permission=kwargs.get("exposure_permission"),
-            bluetooth_active=kwargs.get("bluetooth_active"),
-            notification_permission=kwargs.get("notification_permission"),
-            exposure_notification=kwargs.get("exposure_notification"),
-            last_risky_exposure_on=kwargs.get("last_risky_exposure_on")
-            if kwargs.get("exposure_notification")
-            else None,
-        )
-        return await f(*args, **kwargs)
+            :param args: the positional arguments.
+            :param kwargs: the keyword arguments.
+            :return: the function HTTPResponse return value.
+            """
+            kwargs["operational_info"] = OperationalInfo(
+                platform=platform,
+                province=kwargs.get("province"),
+                exposure_permission=kwargs.get("exposure_permission"),
+                bluetooth_active=kwargs.get("bluetooth_active"),
+                notification_permission=kwargs.get("notification_permission"),
+                exposure_notification=kwargs.get("exposure_notification"),
+                last_risky_exposure_on=kwargs.get("last_risky_exposure_on")
+                if kwargs.get("exposure_notification")
+                else None,
+            )
+            return await f(*args, **kwargs)
+
+        return _wrapped_function
 
     return _wrapper
