@@ -32,6 +32,20 @@ def test_analytics_redis_failure() -> None:
             managers.analytics_redis
 
 
+def test_authorization_ios_redis() -> None:
+    with patch.object(Managers, "_authorization_ios_redis", new_callable=PropertyMock) as mock:
+        mock.return_value = None
+        with raises(RuntimeError):
+            managers.authorization_ios_redis
+
+
+def test_authorization_android_redis() -> None:
+    with patch.object(Managers, "_authorization_android_redis", new_callable=PropertyMock) as mock:
+        mock.return_value = None
+        with raises(RuntimeError):
+            managers.authorization_android_redis
+
+
 async def test_teardown_on_uninitialized() -> None:
     uninitialized_managers = Managers()
     await uninitialized_managers.teardown()

@@ -72,7 +72,7 @@ async def test_apple_operational_info_with_exposure(
     operational_info: Dict[str, Any],
 ) -> None:
     # authorize the current token for the upload
-    await managers.analytics_redis.sadd(
+    await managers.authorization_ios_redis.sadd(
         ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=True)
     )
 
@@ -95,7 +95,7 @@ async def test_apple_operational_info_with_exposure(
         ).to_dict()
     )
 
-    assert not await managers.analytics_redis.sismember(
+    assert not await managers.authorization_ios_redis.sismember(
         get_upload_authorization_member_for_current_month(with_exposure=True), ANALYTICS_TOKEN
     )
 
@@ -123,7 +123,7 @@ async def test_apple_operational_info_without_exposure(
     operational_info["exposure_notification"] = 0
 
     # authorize the current token for the upload
-    await managers.analytics_redis.sadd(
+    await managers.authorization_ios_redis.sadd(
         ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=False)
     )
 
@@ -146,7 +146,7 @@ async def test_apple_operational_info_without_exposure(
         ).to_dict()
     )
 
-    assert not await managers.analytics_redis.sismember(
+    assert not await managers.authorization_ios_redis.sismember(
         get_upload_authorization_member_for_current_month(with_exposure=False), ANALYTICS_TOKEN
     )
 
