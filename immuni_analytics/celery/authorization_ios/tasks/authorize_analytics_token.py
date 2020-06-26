@@ -201,7 +201,7 @@ async def _add_analytics_token_to_redis(analytics_token: str) -> None:
 
     :param analytics_token: the analytics token to authorize for upload.
     """
-    pipe = managers.analytics_redis.pipeline()
+    pipe = managers.authorization_ios_redis.pipeline()
     pipe.sadd(analytics_token, *get_all_authorizations_for_upload())
     pipe.expire(
         analytics_token, timedelta(days=config.ANALYTICS_TOKEN_EXPIRATION_DAYS).total_seconds()

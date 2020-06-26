@@ -79,7 +79,7 @@ async def test_google_operational_info_with_exposure(
         ).to_dict()
     )
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         == "1"
@@ -128,7 +128,7 @@ async def test_google_operational_info_without_exposure(
         ).to_dict()
     )
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_without_exposure["salt"])
         )
         == "1"
@@ -155,7 +155,7 @@ async def test_google_operational_info_dummy(
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 0
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         is None
@@ -190,7 +190,7 @@ async def test_google_operational_info_used_salt(
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         == "1"
@@ -205,7 +205,7 @@ async def test_google_operational_info_used_salt(
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         == "1"
@@ -260,7 +260,7 @@ async def test_upload_bad_request_dummy_header(
     assert data["message"] == "Request not compliant with the defined schema."
     assert OperationalInfo.objects.count() == 0
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         is None
@@ -287,7 +287,7 @@ async def test_invalid_province(
     assert data["message"] == "Request not compliant with the defined schema."
     assert OperationalInfo.objects.count() == 0
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         is None
@@ -314,7 +314,7 @@ async def test_invalid_last_risky_exposure(
     assert data["message"] == "Request not compliant with the defined schema."
     assert OperationalInfo.objects.count() == 0
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         is None
@@ -354,7 +354,7 @@ async def test_invalid_integer_booleans(
     assert data["message"] == "Request not compliant with the defined schema."
     assert OperationalInfo.objects.count() == 0
     assert (
-        await managers.analytics_redis.get(
+        await managers.authorization_android_redis.get(
             get_redis_key(safety_net_post_body_with_exposure["salt"])
         )
         is None
