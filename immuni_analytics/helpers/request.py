@@ -86,7 +86,7 @@ async def post_with_retry(
     )
 
     async with session.post(**params, proxy=config.PROXY_URL) as response:
-        message = None
+        error_body = None
         if response.status >= 400:
             error_body = await response.text()
             message = f"[{response.status}] {error_body}"
