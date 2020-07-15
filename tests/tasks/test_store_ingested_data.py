@@ -15,6 +15,7 @@ import json
 from typing import Any, Callable, Dict, List
 from unittest.mock import MagicMock, patch
 
+from freezegun import freeze_time
 from pytest import mark
 
 from immuni_analytics.celery.scheduled.tasks.store_exposure_payloads import _store_exposure_payloads
@@ -39,23 +40,27 @@ async def test_ingest_data(
         "EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS",
         max_ingested_elements,
     ):
-        if n_elements > 0:
-            await managers.analytics_redis.rpush(
-                config.EXPOSURE_PAYLOAD_QUEUE_KEY,
-                *[json.dumps(d) for d in generate_redis_data(length=n_elements)]
+        with freeze_time("2020-01-20"):
+            if n_elements > 0:
+                await managers.analytics_redis.rpush(
+                    config.EXPOSURE_PAYLOAD_QUEUE_KEY,
+                    *[json.dumps(d) for d in generate_redis_data(length=n_elements)]
+                )
+            assert ExposurePayload.objects.count() == 0
+
+            await _store_exposure_payloads()
+
+            ingested_data = min(n_elements, config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
+
+            assert ExposurePayload.objects.count() == ingested_data
+            remaining_elements = max(0, n_elements - config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
+            logger_info.assert_called_once_with(
+                "Store exposure payload periodic task completed.",
+                extra={
+                    "ingested_data": ingested_data,
+                    "ingestion_queue_length": remaining_elements,
+                },
             )
-        assert ExposurePayload.objects.count() == 0
-
-        await _store_exposure_payloads()
-
-        ingested_data = min(n_elements, config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
-
-        assert ExposurePayload.objects.count() == ingested_data
-        remaining_elements = max(0, n_elements - config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
-        logger_info.assert_called_once_with(
-            "Store exposure payload periodic task completed.",
-            extra={"ingested_data": ingested_data, "ingestion_queue_length": remaining_elements},
-        )
 
 
 @patch("immuni_analytics.celery.scheduled.tasks.store_exposure_payloads._LOGGER.warning")
@@ -66,26 +71,29 @@ async def test_json_error(
     generate_redis_data: Callable[..., Dict[str, Any]],
 ) -> None:
     with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 2):
-        await managers.analytics_redis.rpush(
-            config.EXPOSURE_PAYLOAD_QUEUE_KEY,
-            "non_json_string",
-            *[json.dumps(d) for d in generate_redis_data(length=3)]
-        )
+        with freeze_time("2020-01-20"):
+            await managers.analytics_redis.rpush(
+                config.EXPOSURE_PAYLOAD_QUEUE_KEY,
+                "non_json_string",
+                *[json.dumps(d) for d in generate_redis_data(length=3)]
+            )
 
-        assert ExposurePayload.objects.count() == 0
+            assert ExposurePayload.objects.count() == 0
 
-        await _store_exposure_payloads()
+            await _store_exposure_payloads()
 
-        assert ExposurePayload.objects.count() == 1
+            assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
-        logger_info.assert_called_once_with(
-            "Store exposure payload periodic task completed.",
-            extra={"ingested_data": 1, "ingestion_queue_length": 2},
-        )
-        logger_warning.assert_called_once_with(
-            "Found ingested data with bad format.", extra={"bad_format_data": 1}
-        )
+            assert (
+                await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
+            ) == 1
+            logger_info.assert_called_once_with(
+                "Store exposure payload periodic task completed.",
+                extra={"ingested_data": 1, "ingestion_queue_length": 2},
+            )
+            logger_warning.assert_called_once_with(
+                "Found ingested data with bad format.", extra={"bad_format_data": 1}
+            )
 
 
 @patch("immuni_analytics.celery.scheduled.tasks.store_exposure_payloads._LOGGER.warning")
@@ -96,27 +104,30 @@ async def test_validation_error(
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
     with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 2):
-        redis_data = generate_redis_data(length=3)
-        redis_data[0]["payload"]["exposure_detection_summaries"][0]["date"] = "2020-11-123"
+        with freeze_time("2020-01-20"):
+            redis_data = generate_redis_data(length=3)
+            redis_data[0]["payload"]["exposure_detection_summaries"][0]["date"] = "2020-11-123"
 
-        await managers.analytics_redis.rpush(
-            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
-        )
+            await managers.analytics_redis.rpush(
+                config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            )
 
-        assert ExposurePayload.objects.count() == 0
+            assert ExposurePayload.objects.count() == 0
 
-        await _store_exposure_payloads()
+            await _store_exposure_payloads()
 
-        assert ExposurePayload.objects.count() == 1
+            assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
-        logger_info.assert_called_once_with(
-            "Store exposure payload periodic task completed.",
-            extra={"ingested_data": 1, "ingestion_queue_length": 1},
-        )
-        logger_warning.assert_called_once_with(
-            "Found ingested data with bad format.", extra={"bad_format_data": 1}
-        )
+            assert (
+                await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
+            ) == 1
+            logger_info.assert_called_once_with(
+                "Store exposure payload periodic task completed.",
+                extra={"ingested_data": 1, "ingestion_queue_length": 1},
+            )
+            logger_warning.assert_called_once_with(
+                "Found ingested data with bad format.", extra={"bad_format_data": 1}
+            )
 
 
 @patch("immuni_analytics.celery.scheduled.tasks.store_exposure_payloads._LOGGER.warning")
@@ -191,25 +202,28 @@ async def test_empty_exposure_info(
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
     with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 1):
-        redis_data = generate_redis_data(length=1)
-        redis_data[0]["payload"]["exposure_detection_summaries"][0]["exposure_info"] = []
+        with freeze_time("2020-01-20"):
+            redis_data = generate_redis_data(length=1)
+            redis_data[0]["payload"]["exposure_detection_summaries"][0]["exposure_info"] = []
 
-        await managers.analytics_redis.rpush(
-            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
-        )
+            await managers.analytics_redis.rpush(
+                config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            )
 
-        assert ExposurePayload.objects.count() == 0
+            assert ExposurePayload.objects.count() == 0
 
-        await _store_exposure_payloads()
+            await _store_exposure_payloads()
 
-        assert ExposurePayload.objects.count() == 1
+            assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
-        logger_info.assert_called_once_with(
-            "Store exposure payload periodic task completed.",
-            extra={"ingested_data": 1, "ingestion_queue_length": 0},
-        )
-        logger_warning.assert_not_called()
+            assert (
+                await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
+            ) == 0
+            logger_info.assert_called_once_with(
+                "Store exposure payload periodic task completed.",
+                extra={"ingested_data": 1, "ingestion_queue_length": 0},
+            )
+            logger_warning.assert_not_called()
 
 
 @patch("immuni_analytics.celery.scheduled.tasks.store_exposure_payloads._LOGGER.warning")
@@ -220,25 +234,28 @@ async def test_missing_symptoms_started_on(
     generate_redis_data: Callable[..., List[Dict[str, Any]]],
 ) -> None:
     with patch("immuni_analytics.core.config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS", 1):
-        redis_data = generate_redis_data(length=1)
-        del redis_data[0]["payload"]["symptoms_started_on"]
+        with freeze_time("2020-01-20"):
+            redis_data = generate_redis_data(length=1)
+            del redis_data[0]["payload"]["symptoms_started_on"]
 
-        await managers.analytics_redis.rpush(
-            config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
-        )
+            await managers.analytics_redis.rpush(
+                config.EXPOSURE_PAYLOAD_QUEUE_KEY, *[json.dumps(d) for d in redis_data]
+            )
 
-        assert ExposurePayload.objects.count() == 0
+            assert ExposurePayload.objects.count() == 0
 
-        await _store_exposure_payloads()
+            await _store_exposure_payloads()
 
-        assert ExposurePayload.objects.count() == 1
+            assert ExposurePayload.objects.count() == 1
 
-        assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
-        logger_info.assert_called_once_with(
-            "Store exposure payload periodic task completed.",
-            extra={"ingested_data": 1, "ingestion_queue_length": 0},
-        )
-        logger_warning.assert_not_called()
+            assert (
+                await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
+            ) == 0
+            logger_info.assert_called_once_with(
+                "Store exposure payload periodic task completed.",
+                extra={"ingested_data": 1, "ingestion_queue_length": 0},
+            )
+            logger_warning.assert_not_called()
 
 
 @mark.parametrize("value", ["asd", [], {}, "2020-123-01", "2020-01-123"])
