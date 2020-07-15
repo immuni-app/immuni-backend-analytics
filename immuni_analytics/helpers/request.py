@@ -15,7 +15,7 @@ import logging
 from http import HTTPStatus
 from typing import Any, Dict
 
-from aiohttp import ClientError, ClientResponseError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientSession, ClientTimeout
 from tenacity import (
     RetryCallState,
     retry,
