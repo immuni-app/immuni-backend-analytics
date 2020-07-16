@@ -56,10 +56,7 @@ async def test_ingest_data(
         remaining_elements = max(0, n_elements - config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
         logger_info.assert_called_once_with(
             "Store exposure payload periodic task completed.",
-            extra={
-                "ingested_data": ingested_data,
-                "ingestion_queue_length": remaining_elements,
-            },
+            extra={"ingested_data": ingested_data, "ingestion_queue_length": remaining_elements,},
         )
 
 
@@ -84,9 +81,7 @@ async def test_json_error(
 
     assert ExposurePayload.objects.count() == 1
 
-    assert (
-        await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
-    ) == 1
+    assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
     logger_info.assert_called_once_with(
         "Store exposure payload periodic task completed.",
         extra={"ingested_data": 1, "ingestion_queue_length": 2},
@@ -118,9 +113,7 @@ async def test_validation_error(
 
     assert ExposurePayload.objects.count() == 1
 
-    assert (
-        await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
-    ) == 1
+    assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 1
     logger_info.assert_called_once_with(
         "Store exposure payload periodic task completed.",
         extra={"ingested_data": 1, "ingestion_queue_length": 1},
@@ -216,9 +209,7 @@ async def test_empty_exposure_info(
 
     assert ExposurePayload.objects.count() == 1
 
-    assert (
-        await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
-    ) == 0
+    assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
     logger_info.assert_called_once_with(
         "Store exposure payload periodic task completed.",
         extra={"ingested_data": 1, "ingestion_queue_length": 0},
@@ -248,9 +239,7 @@ async def test_missing_symptoms_started_on(
 
     assert ExposurePayload.objects.count() == 1
 
-    assert (
-        await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)
-    ) == 0
+    assert (await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_ERRORS_QUEUE_KEY)) == 0
     logger_info.assert_called_once_with(
         "Store exposure payload periodic task completed.",
         extra={"ingested_data": 1, "ingestion_queue_length": 0},
