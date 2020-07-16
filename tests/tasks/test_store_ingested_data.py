@@ -56,7 +56,7 @@ async def test_ingest_data(
         remaining_elements = max(0, n_elements - config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS)
         logger_info.assert_called_once_with(
             "Store exposure payload periodic task completed.",
-            extra={"ingested_data": ingested_data, "ingestion_queue_length": remaining_elements,},
+            extra={"ingested_data": ingested_data, "ingestion_queue_length": remaining_elements},
         )
 
 
