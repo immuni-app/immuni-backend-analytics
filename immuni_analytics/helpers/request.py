@@ -12,6 +12,7 @@
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+from http import HTTPStatus
 from typing import Any, Dict
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
@@ -35,6 +36,12 @@ class ServerUnavailableError(ImmuniException):
     """
 
 
+class TooManyRequestsError(ImmuniException):
+    """
+    Raised when the server returns a 429 error code.
+    """
+
+
 class BadFormatRequestError(ImmuniException):
     """
     Raised when the server returns a 4xx error code.
@@ -55,7 +62,7 @@ def after_retry_callback(retry_state: RetryCallState) -> None:
 
 @retry(
     retry=retry_if_exception_type(
-        (ClientError, TimeoutError, ServerUnavailableError)
+        (ClientError, TimeoutError, ServerUnavailableError, TooManyRequestsError)
     ),  # type: ignore
     wait=wait_exponential(multiplier=1, min=2, max=10),  # type: ignore
     stop=stop_after_attempt(3),  # type: ignore
@@ -67,7 +74,8 @@ async def post_with_retry(
     """
     Wrapper around aiohttp post with retry strategy.
 
-    :raises: BadFormatRequestError, ServerUnavailableError, ClientError, TimeoutError.
+    :raises: BadFormatRequestError, TooManyRequestsError, ServerUnavailableError, ClientError,
+     TimeoutError.
     :return: the client response if successful.
     """
     params: Dict[str, Any] = dict(
@@ -78,10 +86,21 @@ async def post_with_retry(
     )
 
     async with session.post(**params, proxy=config.PROXY_URL) as response:
-        _LOGGER.info("Performed HTTP request.", extra=dict(request=params, response=response))
-        if response.status >= 500:
-            raise ServerUnavailableError()
+        error_body = None
         if response.status >= 400:
-            raise BadFormatRequestError()
+            error_body = await response.text()
+            message = f"[{response.status}] {error_body}"
+
+        _LOGGER.info(
+            "Performed HTTP request.",
+            extra=dict(request=params, response=response, error_body=error_body),
+        )
+
+        if response.status == HTTPStatus.TOO_MANY_REQUESTS:
+            raise TooManyRequestsError(message)
+        if response.status >= 500:
+            raise ServerUnavailableError(message)
+        if response.status >= 400:
+            raise BadFormatRequestError(message)
 
         return await response.read()

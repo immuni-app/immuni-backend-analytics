@@ -23,6 +23,7 @@ from tenacity import RetryError
 from immuni_analytics.helpers.request import (
     BadFormatRequestError,
     ServerUnavailableError,
+    TooManyRequestsError,
     post_with_retry,
 )
 
@@ -35,6 +36,9 @@ class MockedClientResponse(ClientResponse):
 
     async def read(self) -> bytes:
         return self.RESPONSE_BODY
+
+    async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
+        return str(self.RESPONSE_BODY)
 
     def __repr__(self) -> str:
         return f"status: {self.status}"
@@ -95,3 +99,11 @@ async def test_post_with_retry_5xx() -> None:
             await post_with_retry(session, url=_URL, json=_PAYLOAD, headers=dict())
 
         assert isinstance(exception.value.last_attempt._exception, ServerUnavailableError)
+
+
+async def test_post_with_retry_429() -> None:
+    async with MockedClientSession(post_response_status=429) as session:
+        with raises(RetryError) as exception:
+            await post_with_retry(session, url=_URL, json=_PAYLOAD, headers=dict())
+
+        assert isinstance(exception.value.last_attempt._exception, TooManyRequestsError)
