@@ -13,11 +13,14 @@
 
 from typing import Callable
 
+from freezegun import freeze_time
+
 from immuni_analytics.models.exposure_data import ExposurePayload
 
 
 def test_exposure_data_index(generate_mongo_data: Callable[[int], None]) -> None:
-    generate_mongo_data(200)
+    with freeze_time("2020-01-12"):
+        generate_mongo_data(200)
 
     assert (
         ExposurePayload.objects(province="AG").explain()["queryPlanner"]["winningPlan"][

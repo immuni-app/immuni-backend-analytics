@@ -67,7 +67,7 @@ async def is_upload_authorized_for_token(analytics_token: str) -> bool:
     :param analytics_token: the analytics token to check.
     :return: True if the analytics token is authorized, False otherwise.
     """
-    members = await managers.analytics_redis.smembers(analytics_token)
+    members = await managers.authorization_ios_redis.smembers(analytics_token)
     return members and (
         get_upload_authorization_member_for_current_month(with_exposure=True) in members
         or get_upload_authorization_member_for_current_month(with_exposure=False) in members

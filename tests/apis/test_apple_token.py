@@ -42,16 +42,16 @@ async def test_apple_token(client: TestClient) -> None:
         await _add_analytics_token_to_redis(ANALYTICS_TOKEN)
 
     assert response.status == HTTPStatus.ACCEPTED.value
-    assert await managers.analytics_redis.sismember(
+    assert await managers.authorization_ios_redis.sismember(
         ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=True)
     )
-    assert await managers.analytics_redis.sismember(
+    assert await managers.authorization_ios_redis.sismember(
         ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=False)
     )
-    assert await managers.analytics_redis.sismember(
+    assert await managers.authorization_ios_redis.sismember(
         ANALYTICS_TOKEN, get_upload_authorization_member_for_next_month(with_exposure=True)
     )
-    assert await managers.analytics_redis.sismember(
+    assert await managers.authorization_ios_redis.sismember(
         ANALYTICS_TOKEN, get_upload_authorization_member_for_next_month(with_exposure=False)
     )
 

@@ -70,7 +70,7 @@ async def test_authorize_analytics_token(
     ):
         await _authorize_analytics_token(TEST_ANALYTICS_TOKEN, TEST_DEVICE_TOKEN)
 
-    members = await managers.analytics_redis.smembers(TEST_ANALYTICS_TOKEN)
+    members = await managers.authorization_ios_redis.smembers(TEST_ANALYTICS_TOKEN)
     assert all(
         m in members for m in ["2020-01-01:0", "2020-01-01:1", "2020-02-01:0", "2020-02-01:1"]
     )
@@ -133,7 +133,7 @@ async def test_authorize_analytics_token_used_in_current_month(
             last_update_time=first_read_data.last_update_time,
         ),
     )
-    assert not await managers.analytics_redis.smembers(TEST_ANALYTICS_TOKEN)
+    assert not await managers.authorization_ios_redis.smembers(TEST_ANALYTICS_TOKEN)
 
 
 @freeze_time("2020-01-31")
@@ -192,7 +192,7 @@ async def test_authorize_analytics_token_first_step_not_compliant(
         ),
     )
     mock_set_device_check_bits.assert_called_once_with(TEST_DEVICE_TOKEN, bit0=True, bit1=True)
-    assert not await managers.analytics_redis.smembers(TEST_ANALYTICS_TOKEN)
+    assert not await managers.authorization_ios_redis.smembers(TEST_ANALYTICS_TOKEN)
 
 
 @freeze_time("2020-01-31")
@@ -251,7 +251,7 @@ async def test_authorize_analytics_token_second_step_not_compliant(
         ),
     )
     mock_set_device_check_bits.assert_called_once_with(TEST_DEVICE_TOKEN, bit0=True, bit1=True)
-    assert not await managers.analytics_redis.smembers(TEST_ANALYTICS_TOKEN)
+    assert not await managers.authorization_ios_redis.smembers(TEST_ANALYTICS_TOKEN)
 
 
 @freeze_time("2020-01-31")
@@ -317,7 +317,7 @@ async def test_authorize_analytics_token_third_step_not_compliant(
         ),
         any_order=False,
     )
-    assert not await managers.analytics_redis.smembers(TEST_ANALYTICS_TOKEN)
+    assert not await managers.authorization_ios_redis.smembers(TEST_ANALYTICS_TOKEN)
 
 
 @freeze_time("2020-01-31")
@@ -385,7 +385,7 @@ async def test_authorize_analytics_token_bad_format(
         ):
             await _authorize_analytics_token(TEST_ANALYTICS_TOKEN, TEST_DEVICE_TOKEN)
 
-    assert not await managers.analytics_redis.smembers(TEST_ANALYTICS_TOKEN)
+    assert not await managers.authorization_ios_redis.smembers(TEST_ANALYTICS_TOKEN)
 
 
 @freeze_time("2020-01-31")

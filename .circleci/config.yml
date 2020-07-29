@@ -120,7 +120,7 @@ commands:
 jobs:
   test:
     docker:
-      - image: cimg/python:3.8.2
+      - image: cimg/python:3.8.3
       - image: circleci/mongo:4.0.18-xenial
       - image: circleci/redis:5.0.9-alpine3.11
     resource_class: small
@@ -134,7 +134,7 @@ jobs:
 
   check:
     docker:
-      - image: cimg/python:3.8.2
+      - image: cimg/python:3.8.3
     resource_class: small
     steps:
       - checkout

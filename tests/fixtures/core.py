@@ -28,6 +28,8 @@ from immuni_common.helpers.tests import create_no_expired_keys_fixture
 async def cleanup(sanic: Sanic) -> None:
     managers.analytics_mongo.drop_database(get_db().name)
     await managers.analytics_redis.flushdb()
+    await managers.authorization_ios_redis.flushdb()
+    await managers.authorization_android_redis.flushdb()
     pass
 
 

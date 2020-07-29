@@ -39,7 +39,7 @@ async def test_verify_safety_net_attestation_verification_error(
     )
 
     assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 0
-    assert not await managers.analytics_redis.get(get_redis_key("mock_salt"))
+    assert not await managers.authorization_android_redis.get(get_redis_key("mock_salt"))
 
 
 @patch(
@@ -54,7 +54,7 @@ async def test_verify_safety_net_attestation_verification_error(
 async def test_verify_safety_net_attestation_used_salt(
     warning_logger: MagicMock, operational_info: Dict[str, Any]
 ) -> None:
-    await managers.analytics_redis.set(get_redis_key("mock_salt"), 1)
+    await managers.authorization_android_redis.set(get_redis_key("mock_salt"), 1)
 
     await _verify_safety_net_attestation(
         "mock_safety_net_attestation",

@@ -29,6 +29,8 @@ class Managers(BaseManagers):
 
     _analytics_mongo: Optional[MongoClient] = None
     _analytics_redis: Optional[Redis] = None
+    _authorization_ios_redis: Optional[Redis] = None
+    _authorization_android_redis: Optional[Redis] = None
 
     @property
     def analytics_mongo(self) -> MongoClient:
@@ -48,6 +50,28 @@ class Managers(BaseManagers):
             raise RuntimeError("Attempting to use Analytics redis before initialization")
         return self._analytics_redis
 
+    @property
+    def authorization_ios_redis(self) -> Redis:
+        """
+        Retrieves the Authorization iOS Redis Client.
+        Raises an exception if it was not initialized.
+        """
+        if self._authorization_ios_redis is None:
+            raise RuntimeError("Attempting to use Authorization iOS redis before initialization")
+        return self._authorization_ios_redis
+
+    @property
+    def authorization_android_redis(self) -> Redis:
+        """
+        Retrieves the Authorization Android Redis Client.
+        Raises an exception if it was not initialized.
+        """
+        if self._authorization_android_redis is None:
+            raise RuntimeError(
+                "Attempting to use Authorization Android redis before initialization"
+            )
+        return self._authorization_android_redis
+
     async def initialize(  # pylint: disable=arguments-differ
         self, initialize_mongo: bool = False
     ) -> None:
@@ -63,6 +87,12 @@ class Managers(BaseManagers):
         self._analytics_redis = await aioredis.create_redis_pool(
             address=config.ANALYTICS_BROKER_REDIS_URL, encoding="utf-8",
         )
+        self._authorization_ios_redis = await aioredis.create_redis_pool(
+            address=config.CELERY_BROKER_REDIS_URL_AUTHORIZATION_IOS, encoding="utf-8",
+        )
+        self._authorization_android_redis = await aioredis.create_redis_pool(
+            address=config.CELERY_BROKER_REDIS_URL_AUTHORIZATION_ANDROID, encoding="utf-8",
+        )
 
     async def teardown(self) -> None:
         """
@@ -76,6 +106,14 @@ class Managers(BaseManagers):
         if self._analytics_redis is not None:
             self._analytics_redis.close()
             await self._analytics_redis.wait_closed()
+
+        if self._authorization_ios_redis is not None:
+            self._authorization_ios_redis.close()
+            await self._authorization_ios_redis.wait_closed()
+
+        if self._authorization_android_redis is not None:
+            self._authorization_android_redis.close()
+            await self._authorization_android_redis.wait_closed()
 
 
 managers = Managers()

@@ -76,7 +76,7 @@ async def _verify_safety_net_attestation(
     except (SafetyNetVerificationError, MalformedJwsToken):
         return
 
-    if await managers.analytics_redis.set(
+    if await managers.authorization_android_redis.set(
         key=safety_net.get_redis_key(salt),
         value=1,
         expire=config.SAFETY_NET_MAX_SKEW_MINUTES * 60,
