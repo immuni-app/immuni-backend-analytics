@@ -17,7 +17,7 @@ from http import HTTPStatus
 from typing import Any
 
 from marshmallow import fields
-from marshmallow.validate import Length
+from marshmallow.validate import Length, Range
 from sanic import Blueprint
 from sanic.request import Request
 from sanic.response import HTTPResponse
@@ -95,6 +95,7 @@ bp = Blueprint("analytics", url_prefix="analytics")
     notification_permission=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
     province=Province(),
+    build=fields.Integer(required=False, validate=Range(min=1, max=config.MAX_ALLOWED_BUILD)),
 )
 @monitor_operational_info
 # Dummy requests are currently being filtered at the reverse proxy level, emulating the same
@@ -150,6 +151,7 @@ async def post_apple_operational_info(
     notification_permission=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
     province=Province(),
+    build=fields.Integer(required=False, validate=Range(min=1, max=config.MAX_ALLOWED_BUILD)),
     salt=Base64String(
         required=True, min_encoded_length=config.SALT_LENGTH, max_encoded_length=config.SALT_LENGTH
     ),

@@ -13,9 +13,11 @@
 
 from typing import Any, Callable, Coroutine
 
+from mongoengine import ValidationError
 from sanic.response import HTTPResponse
 
 from immuni_analytics.models.operational_info import OperationalInfo
+from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.models.enums import Platform
 
 
@@ -46,6 +48,7 @@ def inject_operational_info(
             """
             kwargs["operational_info"] = OperationalInfo(
                 platform=platform,
+                build=kwargs.get("build"),
                 province=kwargs.get("province"),
                 exposure_permission=kwargs.get("exposure_permission"),
                 bluetooth_active=kwargs.get("bluetooth_active"),
@@ -55,6 +58,12 @@ def inject_operational_info(
                 if kwargs.get("exposure_notification")
                 else None,
             )
+
+            try:
+                kwargs["operational_info"].validate()
+            except ValidationError as error:
+                raise SchemaValidationException(str(error))
+
             return await f(*args, **kwargs)
 
         return _wrapped_function
