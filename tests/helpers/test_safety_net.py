@@ -93,6 +93,7 @@ def test_get_jws_payload_raises(warning_logger: MagicMock, wrong_jws: str) -> No
 def _operational_info_from_post_body(post_body: Dict[str, Any]) -> OperationalInfo:
     return OperationalInfo(
         platform=Platform.ANDROID,
+        build=post_body.get("build"),
         province=post_body["province"],
         exposure_permission=post_body["exposure_permission"],
         bluetooth_active=post_body["bluetooth_active"],
