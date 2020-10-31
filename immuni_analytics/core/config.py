@@ -75,6 +75,7 @@ OPERATIONAL_INFO_QUEUE_KEY: str = config("OPERATIONAL_INFO_QUEUE_KEY", default="
 OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS: int = config(
     "OPERATIONAL_INFO_MAX_INGESTED_ELEMENTS", cast=int, default=100
 )
+MAX_ALLOWED_BUILD: int = config("MAX_ALLOWED_BUILD", cast=int, default=20_000)  # TODO: move common
 READ_TIME_SECONDS_MAX: int = config("READ_TIME_SECONDS_MAX", cast=int, default=3)
 READ_TIME_SECONDS_MIN: int = config("READ_TIME_SECONDS_MIN", cast=int, default=0)
 REQUESTS_TIMEOUT_SECONDS: int = config("REQUESTS_TIMEOUT_SECONDS", cast=int, default=5)

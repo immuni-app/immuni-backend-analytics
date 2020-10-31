@@ -49,6 +49,7 @@ class AppleOperationalInfo:
     last_risky_exposure_on = doc.Date(
         "The date on which the last Risky Exposure took place, if any."
     )
+    build = doc.Integer("The App's build number.", required=False)
 
 
 class GoogleOperationalInfo(AppleOperationalInfo):

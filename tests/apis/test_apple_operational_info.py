@@ -21,6 +21,7 @@ from pytest import fixture, mark
 from pytest_sanic.utils import TestClient
 
 from immuni_analytics.core import config
+from immuni_analytics.core.config import MAX_ALLOWED_BUILD
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.redis import get_upload_authorization_member_for_current_month
 from immuni_analytics.models.operational_info import OperationalInfo
@@ -167,7 +168,6 @@ async def test_apple_operational_info_dummy(
 
     assert response.status == HTTPStatus.NO_CONTENT.value
     assert OperationalInfo.objects.count() == 0
-
     redis_logger_info.assert_not_called()
 
 
@@ -175,8 +175,12 @@ async def test_apple_operational_info_dummy(
     "bad_data",
     [{k: v for k, v in OPERATIONAL_INFO.items() if k != excluded} for excluded in OPERATIONAL_INFO],
 )
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
 async def test_apple_operational_info_bad_request(
-    bad_data: Dict[str, Any], client: TestClient, headers: Dict[str, str]
+    redis_logger_info: MagicMock,
+    bad_data: Dict[str, Any],
+    client: TestClient,
+    headers: Dict[str, str],
 ) -> None:
     response = await client.post(
         "/v1/analytics/apple/operational-info", json=bad_data, headers=headers
@@ -187,3 +191,69 @@ async def test_apple_operational_info_bad_request(
     assert data["message"] == "Request not compliant with the defined schema."
 
     assert OperationalInfo.objects.count() == 0
+    redis_logger_info.assert_not_called()
+
+
+@mark.parametrize(
+    "bad_build", {None, 0, MAX_ALLOWED_BUILD + 1},
+)
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
+async def test_apple_operational_info_bad_build(
+    redis_logger_info: MagicMock,
+    bad_build: Any,
+    operational_info: Dict[str, Any],
+    client: TestClient,
+    headers: Dict[str, str],
+) -> None:
+    response = await client.post(
+        "/v1/analytics/apple/operational-info",
+        json=dict(**operational_info, build=bad_build),
+        headers=headers,
+    )
+
+    assert response.status == 400
+    data = await response.json()
+    assert data["message"] == "Request not compliant with the defined schema."
+
+    assert OperationalInfo.objects.count() == 0
+    redis_logger_info.assert_not_called()
+
+
+@mark.parametrize(
+    "build", range(1, MAX_ALLOWED_BUILD, MAX_ALLOWED_BUILD // 5),
+)
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
+async def test_apple_operational_info_good_build(
+    redis_logger_info: MagicMock,
+    build: Dict[str, Any],
+    operational_info: Dict[str, Any],
+    client: TestClient,
+    headers: Dict[str, str],
+) -> None:
+    # authorize the current token for the upload
+    await managers.authorization_ios_redis.sadd(
+        ANALYTICS_TOKEN, get_upload_authorization_member_for_current_month(with_exposure=True)
+    )
+
+    response = await client.post(
+        "/v1/analytics/apple/operational-info",
+        json=dict(**operational_info, build=build),
+        headers=headers,
+    )
+
+    assert response.status == HTTPStatus.NO_CONTENT.value
+    assert (
+        json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
+        == OperationalInfo(
+            bluetooth_active=operational_info["bluetooth_active"],
+            exposure_notification=operational_info["exposure_notification"],
+            exposure_permission=operational_info["exposure_permission"],
+            last_risky_exposure_on=date.fromisoformat(operational_info["last_risky_exposure_on"]),
+            notification_permission=operational_info["notification_permission"],
+            platform=Platform.IOS,
+            build=build,
+            province=operational_info["province"],
+        ).to_dict()
+    )
+
+    redis_logger_info.assert_called_once_with("Successfully enqueued operational info.")

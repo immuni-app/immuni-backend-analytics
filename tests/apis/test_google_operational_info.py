@@ -25,6 +25,7 @@ from immuni_analytics.celery.authorization_android.tasks.verify_safety_net_attes
     _verify_safety_net_attestation,
 )
 from immuni_analytics.core import config
+from immuni_analytics.core.config import MAX_ALLOWED_BUILD
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.safety_net import get_redis_key
 from immuni_analytics.models.operational_info import OperationalInfo
@@ -359,3 +360,88 @@ async def test_invalid_integer_booleans(
         )
         is None
     )
+
+
+@mark.parametrize(
+    "bad_build", {None, 0, MAX_ALLOWED_BUILD + 1},
+)
+async def test_invalid_build(
+    client: TestClient,
+    headers: Dict[str, str],
+    bad_build: Any,
+    safety_net_post_body_with_exposure: Dict[str, Any],
+) -> None:
+    safety_net_post_body_with_exposure["build"] = bad_build
+
+    response = await client.post(
+        "/v1/analytics/google/operational-info",
+        json=safety_net_post_body_with_exposure,
+        headers=headers,
+    )
+
+    assert response.status == 400
+    data = await response.json()
+    assert data["message"] == "Request not compliant with the defined schema."
+    assert OperationalInfo.objects.count() == 0
+    assert (
+        await managers.authorization_android_redis.get(
+            get_redis_key(safety_net_post_body_with_exposure["salt"])
+        )
+        is None
+    )
+
+
+@mark.parametrize(
+    "build", range(1, MAX_ALLOWED_BUILD, MAX_ALLOWED_BUILD // 5),
+)
+@freeze_time(datetime.utcfromtimestamp(POST_TIMESTAMP))
+@patch("immuni_analytics.helpers.redis._LOGGER.info")
+async def test_valid_build(
+    redis_logger_info: MagicMock,
+    build: int,
+    client: TestClient,
+    headers: Dict[str, str],
+    safety_net_post_body_without_exposure: Dict[str, Any],
+) -> None:
+    safety_net_post_body_without_exposure["build"] = build
+    with patch("immuni_analytics.helpers.safety_net.config.SAFETY_NET_APK_DIGEST", TEST_APK_DIGEST):
+        with patch("immuni_analytics.apis.analytics.verify_safety_net_attestation.delay"):
+            response = await client.post(
+                "/v1/analytics/google/operational-info",
+                json=safety_net_post_body_without_exposure,
+                headers=headers,
+            )
+            # FIXME: cannot mock an awaitable, cannot run the real delay as it tries to create
+            #  a new event loop
+            await _verify_safety_net_attestation(
+                safety_net_post_body_without_exposure["signed_attestation"],
+                safety_net_post_body_without_exposure["salt"],
+                _operational_info_from_post_body(safety_net_post_body_without_exposure),
+                safety_net_post_body_without_exposure["last_risky_exposure_on"],
+            )
+
+    assert response.status == HTTPStatus.NO_CONTENT.value
+    assert await managers.analytics_redis.llen(config.OPERATIONAL_INFO_QUEUE_KEY) == 1
+    enqueued = json.loads(await managers.analytics_redis.lpop(config.OPERATIONAL_INFO_QUEUE_KEY))
+    assert (
+        enqueued
+        == OperationalInfo(
+            bluetooth_active=safety_net_post_body_without_exposure["bluetooth_active"],
+            exposure_notification=safety_net_post_body_without_exposure["exposure_notification"],
+            exposure_permission=safety_net_post_body_without_exposure["exposure_permission"],
+            last_risky_exposure_on=None,
+            notification_permission=safety_net_post_body_without_exposure[
+                "notification_permission"
+            ],
+            platform=Platform.ANDROID,
+            build=build,
+            province=safety_net_post_body_without_exposure["province"],
+        ).to_dict()
+    )
+    assert (
+        await managers.authorization_android_redis.get(
+            get_redis_key(safety_net_post_body_without_exposure["salt"])
+        )
+        == "1"
+    )
+    redis_logger_info.assert_called_once_with("Successfully enqueued operational info.")

@@ -17,7 +17,7 @@ import logging
 from datetime import date
 from typing import Any, Dict, Optional
 
-from mongoengine import BooleanField, DateField, StringField
+from mongoengine import BooleanField, DateField, IntField, StringField
 
 from immuni_analytics.models.analytics_document import AnalyticsDocument
 from immuni_common.models.enums import Platform
@@ -37,6 +37,7 @@ class OperationalInfo(AnalyticsDocument):
     last_risky_exposure_on: Optional[date] = DateField(required=False)
     notification_permission: bool = BooleanField(required=True)
     platform: Platform = EnumField(enum=Platform, required=True)
+    build: int = IntField(required=False)
     province: str = StringField(required=True)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -55,6 +56,7 @@ class OperationalInfo(AnalyticsDocument):
             else None,
             notification_permission=self.notification_permission,
             platform=self.platform.value,  # pylint: disable=no-member
+            build=self.build,
             province=self.province,
         )
 
@@ -75,5 +77,6 @@ class OperationalInfo(AnalyticsDocument):
             else None,
             notification_permission=value["notification_permission"],
             platform=Platform(value["platform"]),
+            build=value.get("build"),
             province=value["province"],
         )
