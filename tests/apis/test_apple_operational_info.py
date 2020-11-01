@@ -21,10 +21,10 @@ from pytest import fixture, mark
 from pytest_sanic.utils import TestClient
 
 from immuni_analytics.core import config
-from immuni_analytics.core.config import MAX_ALLOWED_BUILD
 from immuni_analytics.core.managers import managers
 from immuni_analytics.helpers.redis import get_upload_authorization_member_for_current_month
 from immuni_analytics.models.operational_info import OperationalInfo
+from immuni_common.core.config import MAX_ALLOWED_BUILD
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.models.enums import Platform
 from tests.fixtures.operational_info import ANALYTICS_TOKEN, OPERATIONAL_INFO
