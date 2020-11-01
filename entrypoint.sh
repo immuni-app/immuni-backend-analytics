@@ -14,7 +14,7 @@ case "$1" in
             --bind=${API_HOST}:${API_PORT} \
             --max-requests=${API_WORKER_MAX_REQUESTS} \
             --workers=${API_WORKERS} \
-            --worker-class=uvicorn.workers.UvicornWorker ;;
+            --worker-class=immuni_common.uvicorn.ImmuniUvicornWorker ;;
     beat) poetry run celery beat \
             --app=immuni_analytics.celery.scheduled.app.celery_app \
             --loglevel=debug ;;
