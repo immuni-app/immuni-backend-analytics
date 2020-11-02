@@ -47,6 +47,7 @@ from immuni_analytics.models.swagger import (
 )
 from immuni_analytics.monitoring.api import OPERATIONAL_INFO_ANDROID_REUSED_SALT
 from immuni_analytics.monitoring.helpers import monitor_operational_info
+from immuni_common.core import config as common_config
 from immuni_common.core.exceptions import SchemaValidationException
 from immuni_common.helpers.sanic import handle_dummy_requests, json_response, validate
 from immuni_common.helpers.swagger import doc_exception
@@ -95,7 +96,9 @@ bp = Blueprint("analytics", url_prefix="analytics")
     notification_permission=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
     province=Province(),
-    build=fields.Integer(required=False, validate=Range(min=1, max=config.MAX_ALLOWED_BUILD)),
+    build=fields.Integer(
+        required=False, validate=Range(min=1, max=common_config.MAX_ALLOWED_BUILD)
+    ),
 )
 @monitor_operational_info
 # Dummy requests are currently being filtered at the reverse proxy level, emulating the same
@@ -151,7 +154,9 @@ async def post_apple_operational_info(
     notification_permission=IntegerBoolField(required=True),
     last_risky_exposure_on=IsoDate(),
     province=Province(),
-    build=fields.Integer(required=False, validate=Range(min=1, max=config.MAX_ALLOWED_BUILD)),
+    build=fields.Integer(
+        required=False, validate=Range(min=1, max=common_config.MAX_ALLOWED_BUILD)
+    ),
     salt=Base64String(
         required=True, min_encoded_length=config.SALT_LENGTH, max_encoded_length=config.SALT_LENGTH
     ),
