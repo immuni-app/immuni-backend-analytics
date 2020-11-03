@@ -62,7 +62,7 @@ def inject_operational_info(
             try:
                 kwargs["operational_info"].validate()
             except ValidationError as error:
-                raise SchemaValidationException(str(error))
+                raise SchemaValidationException(str(error)) from error
 
             return await f(*args, **kwargs)
 

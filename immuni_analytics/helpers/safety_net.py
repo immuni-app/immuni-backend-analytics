@@ -87,11 +87,11 @@ def _decode_jws(jws_token: str) -> DecodedJWS:
                 payload=_parse_jws_part(parts[1]),
                 signature=parts[2],
             )
-        except (binascii.Error, JSONDecodeError, UnicodeDecodeError,) as exc:
+        except (binascii.Error, JSONDecodeError, UnicodeDecodeError,) as error:
             _LOGGER.warning(
-                "Could not decode jws token.", extra=dict(error=str(exc), jws_token=jws_token),
+                "Could not decode jws token.", extra=dict(error=str(error), jws_token=jws_token),
             )
-            raise MalformedJwsToken(jws_token)
+            raise MalformedJwsToken(jws_token) from error
 
     _LOGGER.warning(
         "Could not decode jws token. Unexpected number of parts.",
@@ -126,20 +126,20 @@ def _get_certificates(header: Dict[str, Any]) -> List[bytes]:
     """
     try:
         certificates_string = header["x5c"]
-    except KeyError:
+    except KeyError as error:
         _LOGGER.warning(
             "Could not retrieve certificates from the jws header.", extra=dict(header=header),
         )
-        raise SafetyNetVerificationError()
+        raise SafetyNetVerificationError() from error
 
     try:
         certificates = [base64.b64decode(c) for c in certificates_string]
-    except binascii.Error as exc:
+    except binascii.Error as error:
         _LOGGER.warning(
             "Could not decode the jws header certificates.",
-            extra=dict(error=str(exc), certificates_string=certificates_string),
+            extra=dict(error=str(error), certificates_string=certificates_string),
         )
-        raise SafetyNetVerificationError()
+        raise SafetyNetVerificationError() from error
 
     return certificates
 
@@ -155,12 +155,12 @@ def _load_leaf_certificate(certificates: List[bytes]) -> Certificate:
     leaf_certificate = certificates[0]
     try:
         return load_der_x509_certificate(leaf_certificate, default_backend())
-    except (ValueError, UnsupportedAlgorithm) as exc:
+    except (ValueError, UnsupportedAlgorithm) as error:
         _LOGGER.warning(
             "Could not load the leaf certificate.",
-            extra=dict(error=str(exc), leaf_certificate=leaf_certificate),
+            extra=dict(error=str(error), leaf_certificate=leaf_certificate),
         )
-        raise SafetyNetVerificationError()
+        raise SafetyNetVerificationError() from error
 
 
 def _validate_certificates(certificates: List[bytes]) -> None:
@@ -176,12 +176,12 @@ def _validate_certificates(certificates: List[bytes]) -> None:
     try:
         validator = CertificateValidator(certificates[0], certificates[1:])
         validator.validate_tls(config.SAFETY_NET_ISSUER_HOSTNAME)
-    except certvalidator.errors.ValidationError as exc:
+    except certvalidator.errors.ValidationError as error:
         _LOGGER.warning(
             "Could not validate the certificates chain.",
-            extra=dict(error=str(exc), certificates=certificates,),
+            extra=dict(error=str(error), certificates=certificates,),
         )
-        raise SafetyNetVerificationError()
+        raise SafetyNetVerificationError() from error
 
 
 def _verify_signature(jws_token: str, certificates: List[bytes]) -> None:
@@ -201,12 +201,12 @@ def _verify_signature(jws_token: str, certificates: List[bytes]) -> None:
         raise SafetyNetVerificationError()
     try:
         jwt.decode(jws_token, public_key)
-    except DecodeError as exc:
+    except DecodeError as error:
         _LOGGER.warning(
             "Could not verify jws signature.",
-            extra=dict(error=str(exc), jws_token=jws_token, public_key=public_key),
+            extra=dict(error=str(error), jws_token=jws_token, public_key=public_key),
         )
-        raise SafetyNetVerificationError()
+        raise SafetyNetVerificationError() from error
 
 
 def _generate_nonce(
