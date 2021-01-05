@@ -1,3 +1,4 @@
 [submodule "common"]
 	path = common
-	url = https://github.com/immuni-app/immuni-backend-common.git 
+	url = https://github.com/alfo1995/immuni-backend-common.git
+	branch = feature/unlock-by-app

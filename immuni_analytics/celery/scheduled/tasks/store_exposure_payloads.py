@@ -25,6 +25,7 @@ from immuni_analytics.core.managers import managers
 from immuni_analytics.models.exposure_data import ExposurePayload
 from immuni_analytics.monitoring.celery import STORED_EXPOSURE_PAYLOAD, WRONG_EXPOSURE_PAYLOAD
 from immuni_common.core.exceptions import ImmuniException
+from immuni_analytics.helpers.his_external_service import invalidate_cun
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,6 +83,18 @@ async def _store_exposure_payloads() -> None:
             "Found ingested data with bad format.", extra={"bad_format_data": n_bad_format_data}
         )
         WRONG_EXPOSURE_PAYLOAD.inc(n_bad_format_data)
+
+    # Request to invalidate CUN through HIS service
+    for element in ingested_data:
+        json_decoded = json.loads(element)
+        id_transaction = json_decoded.get("id_transaction", None)
+        token_sha = json_decoded.get("token_sha", None)
+        if id_transaction and token_sha:
+            invalidate_cun(cun_sha=token_sha, id_transaction=id_transaction)
+            _LOGGER.info(
+                "Calling HIS service to invalidate CUN.",
+                extra={"cun_sha": token_sha, "id_transaction": id_transaction},
+            )
 
     queue_length = await managers.analytics_redis.llen(config.EXPOSURE_PAYLOAD_QUEUE_KEY)
     _LOGGER.info(

@@ -18,6 +18,7 @@ from dataclasses import asdict
 from typing import Any, Dict
 
 from mongoengine import (
+    BooleanField,
     DateField,
     EmbeddedDocument,
     EmbeddedDocumentListField,
@@ -71,6 +72,7 @@ class ExposurePayload(AnalyticsDocument):
     #  first version of the Exposure Ingestion Service, which did not include symptoms_started_on.
     #  It will be changed as soon as all the old data have been collected.
     symptoms_started_on = DateField(required=False)
+    self_upload = BooleanField(required=False)
     exposure_detection_summaries = EmbeddedDocumentListField(
         ExposureDetectionSummary, required=False, default=[]
     )
@@ -91,12 +93,18 @@ class ExposurePayload(AnalyticsDocument):
         ):
             raise ValidationError()
 
+        if not payload.get("id_transaction"):
+            self_upload = False
+        else:
+            self_upload = True
+
         symptoms_started_on = payload.get("symptoms_started_on", None)
 
         return ExposurePayload(
             **{
                 "province": province,
                 "symptoms_started_on": symptoms_started_on,
+                "self_upload": self_upload,
                 "exposure_detection_summaries": [
                     asdict(ExposureDetectionSummarySchema().load(e))
                     for e in exposure_detection_summaries

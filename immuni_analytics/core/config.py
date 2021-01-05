@@ -98,3 +98,7 @@ STORE_OPERATIONAL_INFO_PERIODICITY: str = config(
     cast=validate_crontab("STORE_OPERATIONAL_INFO_PERIODICITY"),
     default="* * * * *",
 )
+
+HIS_INVALIDATE_EXTERNAL_URL: str = config("HIS_INVALIDATE_EXTERNAL_URL", default="")
+HIS_SERVICE_CERTIFICATE: str = config("HIS_SERVICE_CERTIFICATE", default="")
+HIS_SERVICE_CA_BUNDLE: str = config("HIS_SERVICE_CA_BUNDLE", default="")
