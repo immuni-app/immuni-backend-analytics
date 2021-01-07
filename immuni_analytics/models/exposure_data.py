@@ -93,7 +93,7 @@ class ExposurePayload(AnalyticsDocument):
         ):
             raise ValidationError()
 
-        if not payload.get("id_transaction"):
+        if not payload.get("id_test_verification"):
             self_upload = False
         else:
             self_upload = True

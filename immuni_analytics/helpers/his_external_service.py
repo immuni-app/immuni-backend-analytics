@@ -16,23 +16,24 @@ from __future__ import annotations
 import logging
 
 import requests
-from immuni_common.core.exceptions import ApiException
+from immuni_common.core.exceptions import ApiException, SchemaValidationException, UnauthorizedOtpException, \
+    OtpCollisionException
 
 from immuni_analytics.core import config
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def invalidate_cun(cun_sha: str, id_transaction: str) -> None:
+def invalidate_cun(cun_sha: str, id_test_verification: str) -> None:
     """
     The request should use mutual TLS authentication.
 
     :param cun_sha: the unique national code in sha256 format released by the HIS.
-    :param id_transaction: the id of the transaction returned from HIS service.
+    :param id_test_verification: the id of the test returned from HIS service.
     """
     #remote_url = f"https://{config.HIS_INVALIDATE_EXTERNAL_URL}"
     remote_url = f"http://{config.HIS_INVALIDATE_EXTERNAL_URL}"
-    body = dict(cun=cun_sha, id_transaction=id_transaction)
+    body = dict(cun=cun_sha, id_test_verification=id_test_verification)
 
     _LOGGER.info("Requesting invalidation with external HIS service.", extra=body)
 
@@ -42,8 +43,24 @@ def invalidate_cun(cun_sha: str, id_transaction: str) -> None:
         #verify=config.HIS_SERVICE_CA_BUNDLE,
         #cert=config.HIS_SERVICE_CERTIFICATE,
     )
+    if response.status_code == 400:
+        _LOGGER.error("Response %d received from external service.",
+                      response.status_code, extra=response.json())
+        raise SchemaValidationException
+    elif response.status_code == 401:
+        _LOGGER.error("Response %d received from external service.",
+                      response.status_code, extra=response.json())
+        raise UnauthorizedOtpException
+    elif response.status_code == 409:
+        _LOGGER.error("Response %d received from external service.",
+                      response.status_code, extra=response.json())
+        raise OtpCollisionException
+
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
+        _LOGGER.error(e)
         raise ApiException
 
+    json_response = response.json()
+    _LOGGER.info("Response received from external service.", extra=json_response)
