@@ -56,17 +56,23 @@ async def _store_exposure_payloads() -> None:
     pipe.ltrim(config.EXPOSURE_PAYLOAD_QUEUE_KEY, config.EXPOSURE_PAYLOAD_MAX_INGESTED_ELEMENTS, -1)
     ingested_data = (await pipe.execute())[0]
 
+    cun_to_invalidate = []
     bad_format_data = []
     exposure_data = []
 
     for element in ingested_data:
         try:
-            exposure_payload = _load_exposure_payload(element)
+            json_decoded = json.loads(element)
+            exposure_payload = _load_exposure_payload(json_decoded)
+            id_test_verification = json_decoded.get("id_test_verification", None)
+            token_sha = json_decoded.get("token_sha", None)
+            cun_to_invalidate.append({"id_test_verification": id_test_verification,
+                                      "token_sha": token_sha})
         except (
-            MongoengineValidationError,
-            MarshmallowValidationError,
-            JSONDecodeError,
-            InvalidFormatException,
+                MongoengineValidationError,
+                MarshmallowValidationError,
+                JSONDecodeError,
+                InvalidFormatException,
         ):
             bad_format_data.append(element)
             continue
@@ -85,10 +91,9 @@ async def _store_exposure_payloads() -> None:
         WRONG_EXPOSURE_PAYLOAD.inc(n_bad_format_data)
 
     # Request to invalidate CUN through HIS service
-    for element in ingested_data:
-        json_decoded = json.loads(element)
-        id_test_verification = json_decoded.get("id_test_verification", None)
-        token_sha = json_decoded.get("token_sha", None)
+    for cun in cun_to_invalidate:
+        id_test_verification = cun.get("id_test_verification", None)
+        token_sha = cun.get("token_sha", None)
         if id_test_verification and token_sha:
             invalidate_cun(cun_sha=token_sha, id_test_verification=id_test_verification)
             _LOGGER.info(
@@ -103,17 +108,16 @@ async def _store_exposure_payloads() -> None:
     )
 
 
-def _load_exposure_payload(exposure_payload_dict: str) -> ExposurePayload:
+def _load_exposure_payload(json_decoded: dict) -> ExposurePayload:
     """
     Convert and validate a dictionary into an ExposurePayload object.
 
-    :param exposure_payload_dict: the dictionary to be converted into an ExposurePayload object.
+    :param json_decoded: the dictionary to be converted into an ExposurePayload object.
     :return: the converted ExposurePayload object.
     :raises: InvalidFormatException.
     """
-    json_decoded = json.loads(exposure_payload_dict)
     if not (
-        json_decoded.get("version", None) == 1 and (payload := json_decoded.get("payload", None))
+            json_decoded.get("version", None) == 1 and (payload := json_decoded.get("payload", None))
     ):
         raise InvalidFormatException()
 
