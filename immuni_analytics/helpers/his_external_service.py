@@ -31,17 +31,17 @@ def invalidate_cun(cun_sha: str, id_test_verification: str) -> None:
     :param cun_sha: the unique national code in sha256 format released by the HIS.
     :param id_test_verification: the id of the test returned from HIS service.
     """
-    #remote_url = f"https://{config.HIS_INVALIDATE_EXTERNAL_URL}"
-    remote_url = f"http://{config.HIS_INVALIDATE_EXTERNAL_URL}"
+    remote_url = f"https://{config.HIS_INVALIDATE_EXTERNAL_URL}"
+
     body = dict(cun=cun_sha, id_test_verification=id_test_verification)
 
     _LOGGER.info("Requesting invalidation with external HIS service.", extra=body)
 
     response = requests.post(
         remote_url,
-        json=body
-        #verify=config.HIS_SERVICE_CA_BUNDLE,
-        #cert=config.HIS_SERVICE_CERTIFICATE,
+        json=body,
+        verify=config.HIS_SERVICE_CA_BUNDLE,
+        cert=config.HIS_SERVICE_CERTIFICATE,
     )
     if response.status_code == 400:
         _LOGGER.error("Response %d received from external service.",
