@@ -78,7 +78,7 @@ async def _store_exposure_payloads() -> None:
             continue
 
         exposure_data.append(exposure_payload)
-
+    print(cun_to_invalidate)
     if n_exposure_data := len(exposure_data):
         ExposurePayload.objects.insert(exposure_data)
         STORED_EXPOSURE_PAYLOAD.inc(n_exposure_data)
