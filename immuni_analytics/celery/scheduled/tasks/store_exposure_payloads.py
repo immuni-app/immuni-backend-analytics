@@ -64,10 +64,7 @@ async def _store_exposure_payloads() -> None:
         try:
             json_decoded = json.loads(element)
             exposure_payload = _load_exposure_payload(json_decoded)
-            id_test_verification = json_decoded.get("id_test_verification", None)
-            token_sha = json_decoded.get("token_sha", None)
-            cun_to_invalidate.append({"id_test_verification": id_test_verification,
-                                      "token_sha": token_sha})
+            cun_to_invalidate.append(_load_cun_attributes(json_decoded))
         except (
                 MongoengineValidationError,
                 MarshmallowValidationError,
@@ -78,6 +75,7 @@ async def _store_exposure_payloads() -> None:
             continue
 
         exposure_data.append(exposure_payload)
+    # //TODO remove
     print(cun_to_invalidate)
     if n_exposure_data := len(exposure_data):
         ExposurePayload.objects.insert(exposure_data)
@@ -125,3 +123,22 @@ def _load_exposure_payload(json_decoded: dict) -> ExposurePayload:
     exposure_payload.validate()
 
     return exposure_payload
+
+
+def _load_cun_attributes(json_decoded: dict) -> dict:
+    """
+    Extract from a dictionary two attributes and add to to a new dictionary.
+
+    :param json_decoded: the dictionary from which to extract attributes.
+    :return: a dict with two keys.
+    :raises: InvalidFormatException.
+    """
+    if not (
+            json_decoded.get("version", None) == 1 and (payload := json_decoded.get("payload", None))
+    ):
+        raise InvalidFormatException()
+
+    id_test_verification = payload.get("id_test_verification", None)
+    token_sha = payload.get("token_sha", None)
+
+    return dict(id_test_verification=id_test_verification, token_sha=token_sha)
