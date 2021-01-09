@@ -22,10 +22,10 @@ from mongoengine import ValidationError as MongoengineValidationError
 from immuni_analytics.celery.scheduled.app import celery_app
 from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
+from immuni_analytics.helpers.his_external_service import invalidate_cun
 from immuni_analytics.models.exposure_data import ExposurePayload
 from immuni_analytics.monitoring.celery import STORED_EXPOSURE_PAYLOAD, WRONG_EXPOSURE_PAYLOAD
 from immuni_common.core.exceptions import ImmuniException
-from immuni_analytics.helpers.his_external_service import invalidate_cun
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,10 +66,10 @@ async def _store_exposure_payloads() -> None:
             exposure_payload = _load_exposure_payload(json_decoded)
             cun_to_invalidate.append(_load_cun_attributes(json_decoded))
         except (
-                MongoengineValidationError,
-                MarshmallowValidationError,
-                JSONDecodeError,
-                InvalidFormatException,
+            MongoengineValidationError,
+            MarshmallowValidationError,
+            JSONDecodeError,
+            InvalidFormatException,
         ):
             bad_format_data.append(element)
             continue
@@ -114,7 +114,7 @@ def _load_exposure_payload(json_decoded: dict) -> ExposurePayload:
     :raises: InvalidFormatException.
     """
     if not (
-            json_decoded.get("version", None) == 1 and (payload := json_decoded.get("payload", None))
+        json_decoded.get("version", None) == 1 and (payload := json_decoded.get("payload", None))
     ):
         raise InvalidFormatException()
 
@@ -133,7 +133,7 @@ def _load_cun_attributes(json_decoded: dict) -> dict:
     :raises: InvalidFormatException.
     """
     if not (
-            json_decoded.get("version", None) == 1 and (payload := json_decoded.get("payload", None))
+        json_decoded.get("version", None) == 1 and (payload := json_decoded.get("payload", None))
     ):
         raise InvalidFormatException()
 

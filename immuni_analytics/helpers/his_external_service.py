@@ -16,16 +16,21 @@ from __future__ import annotations
 import logging
 
 import requests
-from immuni_common.core.exceptions import ApiException, SchemaValidationException, UnauthorizedOtpException, \
-    OtpCollisionException
 
 from immuni_analytics.core import config
+from immuni_common.core.exceptions import (
+    ApiException,
+    OtpCollisionException,
+    SchemaValidationException,
+    UnauthorizedOtpException,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def invalidate_cun(cun_sha: str, id_test_verification: str) -> None:
     """
+    Invalidate the authorized CUN through HIS external service.
     The request should use mutual TLS authentication.
 
     :param cun_sha: the unique national code in sha256 format released by the HIS.
@@ -58,9 +63,9 @@ def invalidate_cun(cun_sha: str, id_test_verification: str) -> None:
 
     try:
         response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        _LOGGER.error(e)
-        raise ApiException
+    except requests.exceptions.HTTPError as msg_error:
+        _LOGGER.error(msg_error)
+        raise ApiException from msg_error
 
     json_response = response.json()
     _LOGGER.info("Response received from external service.", extra=json_response)
