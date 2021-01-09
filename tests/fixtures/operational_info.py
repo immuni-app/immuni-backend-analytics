@@ -22,7 +22,7 @@ OPERATIONAL_INFO = {
     "bluetooth_active": 1,
     "notification_permission": 1,
     "exposure_notification": 1,
-    "last_risky_exposure_on": "2020-06-15",
+    "last_risky_exposure_on": "2020-12-15",
 }
 
 
