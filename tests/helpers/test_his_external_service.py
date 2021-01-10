@@ -13,8 +13,6 @@
 
 from hashlib import sha256
 
-import pytest
-
 from immuni_analytics.helpers.his_external_service import invalidate_cun
 from immuni_common.core.exceptions import (
     ApiException,

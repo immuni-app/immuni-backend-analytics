@@ -14,7 +14,7 @@
 import json
 from contextlib import contextmanager
 from hashlib import sha256
-from typing import Dict, Iterator, Optional, Tuple
+from typing import Dict, Iterator, Tuple
 
 import responses
 from requests import PreparedRequest

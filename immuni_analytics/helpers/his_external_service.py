@@ -49,16 +49,25 @@ def invalidate_cun(cun_sha: str, id_test_verification: str) -> None:
         cert=config.HIS_SERVICE_CERTIFICATE,
     )
     if response.status_code == 400:
-        _LOGGER.error("Response %d received from external service.",
-                      response.status_code, extra=response.json())
+        _LOGGER.error(
+            "Response %d received from external service.",
+            response.status_code,
+            extra=response.json(),
+        )
         raise SchemaValidationException
-    elif response.status_code == 401:
-        _LOGGER.error("Response %d received from external service.",
-                      response.status_code, extra=response.json())
+    if response.status_code == 401:
+        _LOGGER.error(
+            "Response %d received from external service.",
+            response.status_code,
+            extra=response.json(),
+        )
         raise UnauthorizedOtpException
-    elif response.status_code == 409:
-        _LOGGER.error("Response %d received from external service.",
-                      response.status_code, extra=response.json())
+    if response.status_code == 409:
+        _LOGGER.error(
+            "Response %d received from external service.",
+            response.status_code,
+            extra=response.json(),
+        )
         raise OtpCollisionException
 
     try:
