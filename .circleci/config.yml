@@ -131,6 +131,7 @@ jobs:
           deps_cache_version: "v3"
       - pytest:
           coverage_path: ./immuni_analytics
+          min_coverage: 98
 
   check:
     docker:
