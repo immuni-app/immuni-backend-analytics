@@ -12,7 +12,8 @@
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from asyncio import AbstractEventLoop
-from typing import Awaitable, Callable
+from contextlib import contextmanager
+from typing import Any, Awaitable, Callable, Iterator
 
 from celery import Celery
 from mongoengine import get_db
@@ -20,8 +21,19 @@ from pytest import fixture
 from pytest_sanic.utils import TestClient
 from sanic import Sanic
 
+from immuni_analytics.core import config
 from immuni_analytics.core.managers import managers
 from immuni_common.helpers.tests import create_no_expired_keys_fixture
+
+
+@contextmanager
+def config_set(name: str, value: Any) -> Iterator[None]:
+    old_value = getattr(config, name)
+    setattr(config, name, value)
+    try:
+        yield
+    finally:
+        setattr(config, name, old_value)
 
 
 @fixture(autouse=True)
