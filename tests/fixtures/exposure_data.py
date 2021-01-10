@@ -26,6 +26,8 @@ def exposure_data_dict() -> Dict[str, Any]:
         payload=dict(
             province="AG",
             symptoms_started_on="2020-01-12",
+            token_sha="b39e0733843b1b5d7c558f52f117a824dc41216e0c2bb671b3d79ba82105dd94",
+            id_test_verification=None,
             exposure_detection_summaries=[
                 {
                     "date": "2020-01-11",
