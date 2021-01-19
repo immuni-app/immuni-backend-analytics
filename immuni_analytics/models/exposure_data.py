@@ -93,12 +93,9 @@ class ExposurePayload(AnalyticsDocument):
         ):
             raise ValidationError()
 
-        if not payload.get("id_test_verification"):
-            self_upload = False
-        else:
-            self_upload = True
-
         symptoms_started_on = payload.get("symptoms_started_on", None)
+
+        self_upload = payload.get("self_upload", False)
 
         return ExposurePayload(
             **{
